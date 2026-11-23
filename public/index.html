@@ -429,7 +429,7 @@ async function saveOrder(li){
 (()=>{const L=$("open");let st=null;
   L.addEventListener("touchmove",e=>{if(st&&st.armed)e.preventDefault()},{passive:false});
   L.addEventListener("pointerdown",e=>{
-    if(!db||e.button!==0)return;const h=e.target.closest(".thead");if(!h)return;const li=h.closest("li.task");if(!li)return;
+    if(!db||e.button!==0)return;const h=e.target.closest(".thead");if(!h)return;const li=h.closest("li.task");if(!li||!li.closest("ul.tlist"))return;
     const touch=e.pointerType!=="mouse";if(!touch)e.preventDefault();
     st={li,id:e.pointerId,x0:e.clientX,y0:e.clientY,startY:e.clientY,armed:false,moved:false,touch};
     if(touch)st.timer=setTimeout(()=>{if(st&&!st.armed){navigator.vibrate?.(10);arm()}},420);
@@ -494,6 +494,11 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
   const label=k=>!k?"Остальное":k==="week"?weekLabel:k===today?"Сегодня, "+esc(wd(k)):k===tomorrow?"Завтра, "+esc(wd(k)):k<today?`<span class="late">${esc(cap(wd(k)))} · просрочено</span>`:esc(cap(wd(k)));
   $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${ts.filter(isOpenSt).length?` · ${ts.filter(isOpenSt).length}`:""}</summary><ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Перетащи сюда, чтобы запланировать на неделю":k?"Перетащи сюда, чтобы назначить на этот день":"Без даты"}</li></ul></details>`).join("");
+  {// Предыдущий рабочий день: что закрыто вчера (в понедельник и выходные — в пятницу). Только для просмотра, не drop-зона.
+   const dw=new Date().getDay(),back=dw===1?3:dw===0?2:dw===6?1:1,pd=addD(today,-back),yest=addD(today,-1);
+   const pts=vis.filter(t=>st(t)==="done"&&t.doneAt&&iso(new Date(t.doneAt))===pd).sort((a,b)=>(a.doneAt||"")<(b.doneAt||"")?-1:1);
+   if(pts.length){const pl=(pd===yest?"Вчера, "+esc(wd(pd)):esc(cap(wd(pd))))+` · закрыто ${pts.length}`;
+     $("open").insertAdjacentHTML("afterbegin",`<details class="sec prevday" data-k="prev" ${prev.prev===false?"":"open"}><summary>${pl}</summary><ul class="rows secbody">${pts.map(taskRow).join("")}</ul></details>`)}}
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
