@@ -490,8 +490,9 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const keys=new Set([today,tomorrow,"week",...open.filter(t=>t.due&&!inWeek(t.due)).map(t=>t.due)]);
   const sk=k=>k==="week"?weekEnd+"~":k;
   const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);
-  const wd=k=>new Date(k+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"short"});
-  const label=k=>!k?"Остальное":k==="week"?weekLabel:k===today?"Сегодня":k===tomorrow?"Завтра":k<today?`<span class="late">${esc(fd(k))} · просрочено</span>`:esc(wd(k));
+  const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("ru-RU",{weekday:"long"})+", "+d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})};
+  const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+  const label=k=>!k?"Остальное":k==="week"?weekLabel:k===today?"Сегодня, "+esc(wd(k)):k===tomorrow?"Завтра, "+esc(wd(k)):k<today?`<span class="late">${esc(cap(wd(k)))} · просрочено</span>`:esc(cap(wd(k)));
   $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${ts.filter(isOpenSt).length?` · ${ts.filter(isOpenSt).length}`:""}</summary><ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Перетащи сюда, чтобы запланировать на неделю":k?"Перетащи сюда, чтобы назначить на этот день":"Без даты"}</li></ul></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
