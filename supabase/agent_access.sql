@@ -53,3 +53,12 @@ end $$;
 
 revoke all on function public.radar_op(text, text, text, text, jsonb) from public;
 grant execute on function public.radar_op(text, text, text, text, jsonb) to anon, authenticated;
+
+-- Только владелец (Макс) видит и меняет данные, даже если регистрация открыта.
+-- Добавить владельца: insert into private.owners values ('<auth.users.id>');
+create table if not exists private.owners (user_id uuid primary key);
+create or replace function public.is_radar_owner()
+returns boolean language sql stable security definer set search_path = public, pg_temp
+as $$ select exists (select 1 from private.owners where user_id = auth.uid()) $$;
+grant execute on function public.is_radar_owner() to authenticated;
+alter policy "owner full access" on public.docs using (public.is_radar_owner()) with check (public.is_radar_owner());
