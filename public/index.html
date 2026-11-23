@@ -252,17 +252,6 @@ a.chip{gap:7px}a.chip.ref{gap:5px}a.chip.ref .lico{margin-right:2px}
 /* v24: между строками всегда 2px, раскрытая строка без дополнительных отступов */
 .rows{gap:2px}
 .booting .wrap{visibility:hidden}
-/* v25: upcoming meetings */
-#meetSec{margin-top:8px}
-.meets{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.meets .mday{font-size:12px;color:var(--faint);padding:8px 0 2px}
-.meets .mday:first-child{padding-top:0}
-.meet{display:flex;align-items:center;gap:12px;margin:0 -10px;padding:8px 10px;border-radius:10px;color:var(--fg);text-decoration:none}
-a.meet:hover,a.meet:focus-visible{background:var(--hover);outline:none}
-.meet .mt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;min-width:86px}
-.meet .mn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-.meet.now .mt{color:var(--accent)}
-.meet .mq{font-size:12px;color:var(--faint)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -285,10 +274,6 @@ a.meet:hover,a.meet:focus-visible{background:var(--hover);outline:none}
       <summary>Ближайшие задачи</summary>
       <ul class="rows secbody" id="nowList"></ul>
       <button type="button" class="more" id="toTasks">Все задачи</button>
-    </details>
-    <details class="sec" open id="meetSec" hidden>
-      <summary>Предстоящие миты</summary>
-      <ul class="meets secbody" id="meetList"></ul>
     </details>
     <div id="groups"><p class="empty">Здесь появятся активные проекты.</p></div>
     <p class="note" id="sources"></p>
@@ -568,20 +553,6 @@ $("addform").addEventListener("submit",async e=>{
   catch{$("newtask").value=v;$("tnote").textContent="Задача не сохранилась. Попробуйте ещё раз."}
 });
 
-let meetings=[];
-function renderMeetings(){
-  const now=Date.now(),list=meetings.filter(m=>new Date(m.end||m.start).getTime()>now).sort((a,b)=>new Date(a.start)-new Date(b.start));
-  const sec=$("meetSec");if(!list.length){sec.hidden=true;return}sec.hidden=false;
-  const dk=d=>d.toLocaleDateString("sv-SE"),today=dk(new Date()),tom=dk(new Date(now+864e5));
-  const tm=d=>d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-  const days=[];for(const m of list){const k=dk(new Date(m.start));if(days.length>=3&&!days.includes(k))break;if(!days.includes(k))days.push(k)}
-  let out="",last="";
-  for(const m of list){const s=new Date(m.start),e=new Date(m.end||m.start),k=dk(s);if(!days.includes(k))break;
-    if(k!==last){last=k;out+=`<li class="mday">${k===today?"Сегодня":k===tom?"Завтра":s.toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"short"})}</li>`}
-    const live=s.getTime()<=now,tag=m.url?"a":"div",href=m.url?` href="${esc(m.url)}" target="_blank" rel="noopener"`:"";
-    out+=`<li><${tag} class="meet${live?" now":""}"${href}><span class="mt">${live?"Идёт":tm(s)+"–"+tm(e)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"?`<span class="mq">не ответил</span>`:""}</${tag}></li>`}
-  $("meetList").innerHTML=out;
-}
 (async()=>{
   db=window.radarDB?await window.radarDB():null;
   if(!db){window.radarReady&&window.radarReady();document.documentElement.classList.remove("booting");$("stamp").textContent="Нет связи с базой";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Задачи не загрузились. Проверь интернет и обнови страницу.</li>`;return}
@@ -594,8 +565,6 @@ function renderMeetings(){
     $("summary").innerHTML=(m.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("");
     $("sources").textContent=m.sources?`Источники: ${m.sources}`:"";
   },()=>{});
-  db.doc("meta/meetings").onSnapshot(s=>{meetings=s.exists?(s.data().items||[]):[];renderMeetings()},()=>{});
-  setInterval(()=>renderMeetings(),60000);
   window.radarReady();
 })();
 </script>
