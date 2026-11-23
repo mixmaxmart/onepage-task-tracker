@@ -9,10 +9,11 @@
 ## Настройка
 
 ### 1. Supabase
-1. SQL Editor → вставить `supabase/schema.sql` (или `setup.sql` с данными) → Run.
+1. SQL Editor → выполнить `supabase/schema.sql`, затем `supabase/agent_access.sql`.
+   Добавить токен агентов: `insert into private.agent_tokens (token_hash) values (encode(extensions.digest('<MCP_TOKEN>','sha256'),'hex'));`
 2. Authentication → Users → Add user → Create new user: почта и пароль, галочка Auto Confirm.
 3. Authentication → Sign In / Providers → выключить **Allow new users to sign up**. Тогда войти можешь только ты.
-4. Project Settings → API Keys: понадобятся Project URL, publishable key и secret key.
+4. Project Settings → API Keys: понадобятся Project URL и publishable key. Секретный ключ не нужен: MCP-сервер ходит через функцию `radar_op`, которая проверяет токен.
 
 ### 2. Vercel
 Add New → Project → импорт этого репозитория. В Environment Variables:
@@ -21,7 +22,6 @@ Add New → Project → импорт этого репозитория. В Envir
 |---|---|
 | `SUPABASE_URL` | Project URL, например `https://xxxx.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | publishable (или anon) ключ, он публичный |
-| `SUPABASE_SECRET_KEY` | secret (или service_role) ключ, только для сервера |
 | `MCP_TOKEN` | случайная строка от 24 символов: `openssl rand -hex 24` |
 
 Deploy.

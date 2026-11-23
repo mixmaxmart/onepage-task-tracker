@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } }));
   }
 
-  const store = makeStore({ url: process.env.SUPABASE_URL, secret: process.env.SUPABASE_SECRET_KEY });
+  const store = makeStore({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_PUBLISHABLE_KEY, token: process.env.MCP_TOKEN });
   const msgs = Array.isArray(body) ? body : [body];
   const out = (await Promise.all(msgs.map((m) => handleRpc(store, m)))).filter(Boolean);
 

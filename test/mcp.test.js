@@ -3,32 +3,30 @@ import assert from "node:assert/strict";
 import { makeStore } from "../lib/store.js";
 import { handleRpc } from "../lib/mcp.js";
 
-// Подменный Supabase REST в памяти.
+// Подменный radar_op в памяти.
 function fakeFetch() {
   const rows = new Map();
   return async (url, init = {}) => {
-    const u = new URL(url); const m = init.method || "GET";
-    const body = init.body ? JSON.parse(init.body) : null;
-    const eq = (k) => u.searchParams.get(k)?.replace(/^eq\./, "");
-    const resp = (s, v) => ({ ok: s < 300, status: s, text: async () => (v === undefined ? "" : JSON.stringify(v)) });
-    if (u.pathname.endsWith("/rpc/doc_merge")) {
-      const k = body.c + "/" + body.i; const r = rows.get(k);
-      if (!r) return resp(200, null);
-      r.data = { ...r.data, ...body.patch }; return resp(200, r.data);
+    const b = JSON.parse(init.body);
+    const resp = (s, v) => ({ ok: s < 300, status: s, text: async () => JSON.stringify(v) });
+    if (b.p_token !== "tok") return resp(400, { message: "unauthorized" });
+    const k = b.p_collection + "/" + b.p_id;
+    switch (b.p_op) {
+      case "list": return resp(200, [...rows.entries()].filter(([kk]) => kk.startsWith(b.p_collection + "/")).map(([kk, d]) => ({ id: kk.split("/")[1], ...d })));
+      case "get": return resp(200, rows.has(k) ? { id: b.p_id, ...rows.get(k) } : null);
+      case "set": rows.set(k, b.p_data); return resp(200, { id: b.p_id, ...b.p_data });
+      case "update": if (!rows.has(k)) return resp(200, null); rows.set(k, { ...rows.get(k), ...b.p_data }); return resp(200, { id: b.p_id, ...rows.get(k) });
+      case "delete": return resp(200, { deleted: rows.delete(k) ? 1 : 0 });
     }
-    const c = eq("collection"), i = eq("id");
-    const sel = [...rows.values()].filter((r) => (!c || r.collection === c) && (!i || r.id === i));
-    if (m === "GET") return resp(200, sel.map((r) => ({ id: r.id, data: r.data })));
-    if (m === "POST") { rows.set(body.collection + "/" + body.id, { ...body }); return resp(201); }
-    if (m === "DELETE") { sel.forEach((r) => rows.delete(r.collection + "/" + r.id)); return resp(200, sel); }
   };
 }
+const mk = () => makeStore({ url: "https://x.supabase.co", key: "sb_publishable_x", token: "tok", fetchImpl: fakeFetch() });
 
 const call = (store, name, args, id = 1) => handleRpc(store, { jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } });
 const parse = (r) => JSON.parse(r.result.content[0].text);
 
 test("initialize и tools/list", async () => {
-  const store = makeStore({ url: "https://x.supabase.co", secret: "sb_secret_x", fetchImpl: fakeFetch() });
+  const store = mk();
   const init = await handleRpc(store, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } });
   assert.equal(init.result.protocolVersion, "2025-06-18");
   assert.equal(await handleRpc(store, { jsonrpc: "2.0", method: "notifications/initialized" }), null);
@@ -37,7 +35,7 @@ test("initialize и tools/list", async () => {
 });
 
 test("set, update, add_task, delete", async () => {
-  const store = makeStore({ url: "https://x.supabase.co", secret: "sb_secret_x", fetchImpl: fakeFetch() });
+  const store = mk();
   await call(store, "set", { collection: "tasks", id: "t01", data: { title: "A", status: "todo", order: 5 } });
   await call(store, "set", { collection: "tasks", id: "t02", data: { title: "B", status: "done", done: true, order: 9 } });
   const u = parse(await call(store, "update", { collection: "tasks", id: "t01", data: { description: "d" } }));
