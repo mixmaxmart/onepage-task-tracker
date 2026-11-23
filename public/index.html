@@ -497,8 +497,10 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${ts.filter(isOpenSt).length?` · ${ts.filter(isOpenSt).length}`:""}</summary><ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Перетащи сюда, чтобы запланировать на неделю":k?"Перетащи сюда, чтобы назначить на этот день":"Без даты"}</li></ul></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
-  {const near=open.filter(t=>t.due&&t.due<=tomorrow).sort((a,b)=>(a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)));
-   const pick=(near.length?near:open).slice(0,6);
+  {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
+   const act=open.filter(isOpenSt);
+   const near=act.filter(t=>t.due&&t.due<=tomorrow).sort((a,b)=>(a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)));
+   const pick=near.length?near:act.slice(0,6);
    $("nowList").innerHTML=pick.map(taskRow).join("");$("nowSec").hidden=!pick.length;
    $("toTasks").textContent=open.filter(isOpenSt).length>pick.length?`Все задачи · ${open.filter(isOpenSt).length}`:"Все задачи";}
   $("doneSec").hidden=!done.length;
