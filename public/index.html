@@ -421,7 +421,7 @@ async function saveOrder(li){
   const prev=lis[i-1],next=lis[i+1];
   let o=prev&&next?(ord(prev)+ord(next))/2:prev?ord(prev)+1:next?ord(next)-1:0;
   const t=tasks.find(x=>x.id===li.dataset.id);if(!t||!db)return;t.order=o;
-  let due=li.parentNode.dataset.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;if(due==="late"){due=t.due&&t.due<today?t.due:addD(today,-1)}const patch={order:o};
+  let due=li.parentNode.dataset.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;if(due==="late"){const dw=new Date().getDay(),pd=addD(today,-(dw===1?3:dw===0?2:1));due=t.due&&t.due<pd?t.due:addD(pd,-1)}const patch={order:o};
   if((t.due||null)!==due){patch.due=due;t.due=due}
   try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Порядок не сохранился. Попробуйте ещё раз."}
 }
