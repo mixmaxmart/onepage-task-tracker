@@ -248,7 +248,7 @@ details.sec>summary:hover *,details.sec>summary:focus-visible *{color:var(--fg)}
 @media (hover:none),(max-width:520px){.task input{margin-top:11px}}
 /* v29: иконки сервисов в чипсах */
 a.chip{gap:7px}a.chip.ref{gap:5px}a.chip.ref .lico{margin-right:2px}
-.lico{display:inline-flex;width:14px;height:14px;flex:none}.lico svg{width:14px;height:14px;display:block}
+.lico{display:inline-flex;width:14px;height:14px;flex:none}.lico svg{width:14px;height:14px;display:block}.lico img{width:14px;height:14px;display:block;border-radius:3px}
 /* v24: между строками всегда 2px, раскрытая строка без дополнительных отступов */
 .rows{gap:2px}
 .booting .wrap{visibility:hidden}
@@ -343,7 +343,7 @@ const ICONS={
   linear:`<svg viewBox="0 0 100 100"><path fill="#5E6AD2" d="M1.23 61.52c-.22-.95.91-1.55 1.6-.86l36.5 36.51c.7.7.1 1.82-.85 1.6C20.05 94.45 5.55 79.95 1.23 61.52ZM0 46.89c-.02.28.09.56.29.76l52.06 52.06c.2.2.48.3.76.29 2.37-.15 4.7-.46 6.96-.93.77-.16 1.03-1.1.48-1.65L2.58 39.45c-.55-.55-1.5-.29-1.65.48-.47 2.27-.78 4.59-.93 6.96ZM4.21 29.7c-.17.38-.08.82.21 1.1l64.78 64.78c.29.29.72.37 1.1.2 1.79-.8 3.52-1.69 5.19-2.68.55-.33.64-1.09.18-1.54L8.44 24.34c-.45-.46-1.21-.37-1.54.18-.99 1.67-1.89 3.4-2.69 5.19ZM12.66 18.07c-.37-.37-.39-.96-.04-1.35C21.78 6.46 35.11 0 49.95 0 77.59 0 100 22.41 100 50.05c0 14.84-6.46 28.17-16.72 37.34-.39.35-.98.33-1.35-.04L12.66 18.07Z"/></svg>`,
   slack:`<svg viewBox="0 0 24 24"><rect x="8" y="2" width="3" height="9" rx="1.5" fill="#36C5F0"/><rect x="2" y="8" width="3" height="3" rx="1.5" fill="#36C5F0"/><rect x="13" y="8" width="9" height="3" rx="1.5" fill="#2EB67D"/><rect x="13" y="2" width="3" height="3" rx="1.5" fill="#2EB67D"/><rect x="13" y="13" width="3" height="9" rx="1.5" fill="#ECB22E"/><rect x="19" y="13" width="3" height="3" rx="1.5" fill="#ECB22E"/><rect x="2" y="13" width="9" height="3" rx="1.5" fill="#E01E5A"/><rect x="8" y="19" width="3" height="3" rx="1.5" fill="#E01E5A"/></svg>`,
   figma:`<svg viewBox="-9 0 56 57"><path fill="#1ABCFE" d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/><path fill="#0ACF83" d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 1 1-19 0z"/><path fill="#FF7262" d="M19 0v19h9.5a9.5 9.5 0 1 0 0-19H19z"/><path fill="#F24E1E" d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z"/><path fill="#A259FF" d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z"/></svg>`,
-  granola:tile("#4F7A3A","G"),
+  granola:`<img src="/icons/granola.png" alt="">`,
   notion:tile("var(--fg)","N","var(--bg)"),
   paper:tile("var(--fg)","P","var(--bg)"),
   gdocs:`<svg viewBox="0 0 16 16"><path d="M3.5 1h6l3.5 3.5V14a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="#4285F4"/><path d="M9.5 1v3.5H13z" fill="#A1C2FA"/><path d="M5 8h6M5 10h6M5 12h4" stroke="#fff" stroke-width="1"/></svg>`,
