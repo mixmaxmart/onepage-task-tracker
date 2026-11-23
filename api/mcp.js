@@ -1,14 +1,12 @@
 // Точка входа MCP: https://<домен>/mcp/<MCP_TOKEN>
 // Этот адрес добавляется в Claude как кастомный коннектор.
-import { timingSafeEqual } from "node:crypto";
 import { makeStore } from "../lib/store.js";
 import { handleRpc } from "../lib/mcp.js";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "../lib/config.js";
 
-function tokenOk(given) {
-  const want = process.env.MCP_TOKEN || "";
-  if (want.length < 24 || typeof given !== "string") return false;
-  const a = Buffer.from(given), b = Buffer.from(want);
-  return a.length === b.length && timingSafeEqual(a, b);
+// Токен из адреса проверяет сама база (функция radar_op): неверный токен получит ошибку на любом вызове.
+function tokenOk(t) {
+  return typeof t === "string" && /^[A-Za-z0-9_-]{24,128}$/.test(t);
 }
 
 async function readBody(req) {
@@ -31,7 +29,7 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } }));
   }
 
-  const store = makeStore({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_PUBLISHABLE_KEY, token: process.env.MCP_TOKEN });
+  const store = makeStore({ url: SUPABASE_URL, key: SUPABASE_PUBLISHABLE_KEY, token: req.query.token });
   const msgs = Array.isArray(body) ? body : [body];
   const out = (await Promise.all(msgs.map((m) => handleRpc(store, m)))).filter(Boolean);
 

@@ -16,22 +16,16 @@
 4. Project Settings → API Keys: понадобятся Project URL и publishable key. Секретный ключ не нужен: MCP-сервер ходит через функцию `radar_op`, которая проверяет токен.
 
 ### 2. Vercel
-Add New → Project → импорт этого репозитория. В Environment Variables:
-
-| Переменная | Что это |
-|---|---|
-| `SUPABASE_URL` | Project URL, например `https://xxxx.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | publishable (или anon) ключ, он публичный |
-| `MCP_TOKEN` | случайная строка от 24 символов: `openssl rand -hex 24` |
-
-Deploy.
+Add New → Project → импорт этого репозитория → Deploy. Переменные окружения не нужны:
+адрес Supabase и publishable-ключ лежат в `lib/config.js` (они публичные), а токен агента
+передаётся в адресе коннектора и проверяется базой.
 
 ### 3. Установка
 - iPhone: открыть адрес в Safari → Поделиться → «На экран Домой».
 - Mac: Chrome → значок установки в адресной строке, или Safari → Файл → «Добавить в Dock».
 
 ### 4. Коннектор в Claude
-Settings → Connectors → Add custom connector. Название «Дизайн-радар», URL: `https://<домен>/mcp/<MCP_TOKEN>`.
+Settings → Connectors → Add custom connector. Название «Дизайн-радар», URL: `https://<домен>/mcp/<токен>`, где токен тот, чей sha256 лежит в `private.agent_tokens`.
 
 Инструменты: `list`, `get`, `set`, `update`, `delete`, `batch`, `add_task`.
 
