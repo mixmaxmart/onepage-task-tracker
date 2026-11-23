@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" class="booting">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -249,6 +249,7 @@ details.sec>summary:hover *,details.sec>summary:focus-visible *{color:var(--fg)}
 /* v29: иконки сервисов в чипсах */
 a.chip{gap:7px}a.chip.ref{gap:5px}a.chip.ref .lico{margin-right:2px}
 .lico{display:inline-flex;width:14px;height:14px;flex:none}.lico svg{width:14px;height:14px;display:block}
+.booting .wrap{visibility:hidden}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -294,7 +295,7 @@ a.chip{gap:7px}a.chip.ref{gap:5px}a.chip.ref .lico{margin-right:2px}
   </section>
 </div>
 
-<script src="/api/config"></script>
+<script src="/config.js"></script>
 <script src="/vendor/supabase-2.118.0.js"></script>
 <script src="/db.js"></script>
 <script>
@@ -549,8 +550,8 @@ $("addform").addEventListener("submit",async e=>{
 });
 
 (async()=>{
-  db=await window.radarDB();
-  if(!db){$("stamp").textContent="Нет связи с базой";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Задачи не загрузились. Проверь интернет и обнови страницу.</li>`;return}
+  db=window.radarDB?await window.radarDB():null;
+  if(!db){window.radarReady&&window.radarReady();document.documentElement.classList.remove("booting");$("stamp").textContent="Нет связи с базой";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Задачи не загрузились. Проверь интернет и обнови страницу.</li>`;return}
   const timer=setTimeout(()=>{$("stamp").textContent="Данные пока не загрузились"},10000);
   db.collection("projects").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);projects=s.docs.map(d=>({id:d.id,...d.data()}));renderProjects()},()=>clearTimeout(timer));
   db.collection("tasks").onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks()},()=>{});
@@ -560,5 +561,6 @@ $("addform").addEventListener("submit",async e=>{
     $("summary").innerHTML=(m.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("");
     $("sources").textContent=m.sources?`Источники: ${m.sources}`:"";
   },()=>{});
+  window.radarReady();
 })();
 </script>

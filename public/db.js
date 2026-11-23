@@ -7,6 +7,20 @@
   let sb = null;
   let loaded = false;
 
+  // Кэш последних данных: при запуске сразу показываем его, потом сверяем с базой.
+  const CACHE_KEY = "radar-cache-v1";
+  let saveTimer = null;
+  function saveCache() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify([...docs.values()])); } catch {}
+    }, 300);
+  }
+  function readCache() {
+    try { const a = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); return Array.isArray(a) ? a : null; } catch { return null; }
+  }
+  function clearCache() { try { localStorage.removeItem(CACHE_KEY); } catch {} }
+
   const key = (c, i) => c + "/" + i;
   const snapDocs = (c) =>
     [...docs.values()]
@@ -17,21 +31,26 @@
     for (const l of listeners) if (l.collection === c && (l.id == null || l.id === i)) l.fire();
   }
   function put(row) {
-    docs.set(key(row.collection, row.id), { collection: row.collection, id: row.id, data: row.data || {} });
-    notify(row.collection, row.id);
+    const k = key(row.collection, row.id), data = row.data || {};
+    const prev = docs.get(k);
+    if (prev && JSON.stringify(prev.data) === JSON.stringify(data)) return; // не перерисовывать без изменений
+    docs.set(k, { collection: row.collection, id: row.id, data });
+    saveCache();
+    if (loaded) notify(row.collection, row.id);
   }
   function drop(c, i) {
-    if (docs.delete(key(c, i))) notify(c, i);
+    if (docs.delete(key(c, i))) { saveCache(); if (loaded) notify(c, i); }
   }
 
   async function loadAll() {
     const { data, error } = await sb.from("docs").select("collection,id,data");
     if (error) throw error;
     const seen = new Set();
+    const first = !loaded;
     for (const r of data) { seen.add(key(r.collection, r.id)); put(r); }
     for (const k of [...docs.keys()]) if (!seen.has(k)) { const d = docs.get(k); drop(d.collection, d.id); }
     loaded = true;
-    for (const l of listeners) l.fire();
+    if (first) for (const l of listeners) l.fire();
   }
 
   function subscribe() {
@@ -133,8 +152,16 @@
     if (!window.supabase || !cfg.url || !cfg.key) return null;
     sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
     const { data } = await sb.auth.getSession();
-    if (!data.session) await loginForm();
-    try { await loadAll(); } catch { return null; }
+    const cached = data.session ? readCache() : null;
+    if (!data.session) { clearCache(); ready(); await loginForm(); }
+    if (cached && cached.length) {
+      // Сразу показываем кэш, а свежие данные подтягиваем в фоне.
+      for (const r of cached) docs.set(key(r.collection, r.id), r);
+      loaded = true;
+      loadAll().catch(() => {});
+    } else {
+      try { await loadAll(); } catch { return null; }
+    }
     subscribe();
     // Вернулись в приложение: подтянуть свежие данные, а если сменился день, перезагрузить (секции «Сегодня/Завтра»).
     const day = new Date().toDateString();
@@ -145,7 +172,10 @@
     });
     return api;
   };
-  window.radarSignOut = async () => { if (sb) { await sb.auth.signOut(); location.reload(); } };
+  // Снять экран загрузки: интерфейс показывается только когда есть что показать (или форма входа).
+  function ready() { document.documentElement.classList.remove("booting"); }
+  window.radarReady = ready;
+  window.radarSignOut = async () => { if (sb) { clearCache(); await sb.auth.signOut(); location.reload(); } };
 })();
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
