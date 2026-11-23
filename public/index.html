@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>OnePage дизайн-радар</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Дизайн-радар">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191919" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<style>
+/* Layout: одна колонка в духе нового Claude-приложения; табы-пилюли слева сверху, секции с серыми заголовками и шевронами, строки: иконка, заголовок, серый подзаголовок, статус справа */
+:root{
+  --bg:#ffffff; --raised:#f4f4f3; --pill:#ebebea; --fg:#1a1a19; --muted:#73726e; --faint:#a3a29e;
+  --line:#e6e6e4; --hover:#f4f4f3; --accent:#d97757; --bubble:#f5ece7;
+  --bad:#d4544a; --wait:#d97757; --act:#c9a23a; --ok:#6a9f6e;
+  --font:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#191919; --raised:#262626; --pill:#2e2e2e; --fg:#ececea; --muted:#9b9a96; --faint:#6b6a67;
+  --line:#2f2f2f; --hover:#262626; --accent:#d97757; --bubble:#3a2a22;
+  --bad:#e0716a; --wait:#e08463; --act:#d6b25a; --ok:#86b88a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#191919; --raised:#262626; --pill:#2e2e2e; --fg:#ececea; --muted:#9b9a96; --faint:#6b6a67;
+  --line:#2f2f2f; --hover:#262626; --accent:#d97757; --bubble:#3a2a22;
+  --bad:#e0716a; --wait:#e08463; --act:#d6b25a; --ok:#86b88a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px}
+.tab{background:none;border:0;border-radius:8px;padding:6px 14px;color:var(--muted);cursor:pointer;font-size:15px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--pill);color:var(--fg)}
+.tab .n{color:var(--faint);margin-left:6px;font-size:13px}
+.stamp{font-size:13px;color:var(--faint)}
+
+.panel{display:flex;flex-direction:column;gap:28px}
+details.sec>summary{list-style:none;display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 0;user-select:none}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary:hover{color:var(--fg)}
+.chev{width:10px;height:10px;transition:transform .15s}
+details.sec:not([open])>summary .chev{transform:rotate(-90deg)}
+.secbody{margin-top:12px}
+
+.digest{background:var(--raised);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+.digest ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.row{border-radius:10px}
+.row>button.head{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:9px 10px;border-radius:10px;cursor:pointer}
+.row>button.head:hover{background:var(--hover)}
+.row>button.head:focus-visible{outline:2px solid var(--accent)}
+.ico{width:14px;height:14px;margin-top:4px;border-radius:50%;border:1.5px dashed var(--faint)}
+.ico.waiting{border:1.5px solid var(--wait)} .ico.blocked{border:0;background:var(--bad)} .ico.active{border:1.5px solid var(--act)} .ico.done{border:0;background:var(--ok)}
+.title{font-weight:450;min-width:0}
+.sub{grid-column:2;color:var(--muted);font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.open .sub{white-space:normal}
+.right{color:var(--faint);font-size:13px;white-space:nowrap;padding-top:1px}
+.detail{margin:2px 10px 10px 40px;padding-left:14px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.detail h4{margin:0 0 4px;font-size:13px;font-weight:400;color:var(--muted)}
+.detail ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px}
+.detail li::marker{color:var(--faint)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:3px 10px;text-decoration:none}
+.chip:hover{color:var(--fg);background:var(--hover)}
+.chip.ref b{font-weight:500;color:var(--fg)}
+#open>details.sec{margin-bottom:18px}
+.tlist .ph{list-style:none;color:var(--faint);font-size:13px;padding:6px 8px 6px 52px}
+.tlist:has(li.task) .ph{display:none}
+.tlist.over .ph{color:var(--muted)}
+details.sec>summary .late{color:var(--bad)}
+.task.prog input{border-color:var(--act);background:conic-gradient(var(--act) 0 50%,transparent 0);box-shadow:inset 0 0 0 2px var(--bg)}
+.task.canceled .title{text-decoration:line-through;color:var(--faint)}
+.task.canceled input{border-color:var(--faint);background:none}
+.task.canceled input::after{content:"";width:8px;height:1.5px;background:var(--faint);transform:rotate(45deg);box-shadow:none}
+.thead{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.menu{position:fixed;z-index:50;min-width:200px;padding:4px;background:var(--raised);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28);font-size:14px}
+.menu button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:18px minmax(0,1fr) 14px;align-items:center;gap:10px;width:100%;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--fg)}
+.menu button:hover,.menu button:focus-visible{background:var(--pill)}
+.menu .del{color:var(--bad)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+.menu .ck{color:var(--muted);font-size:12px}
+.si{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--faint);display:inline-block;box-sizing:border-box}
+.si.progress{border-color:var(--act);background:conic-gradient(var(--act) 0 50%,transparent 0);box-shadow:inset 0 0 0 1.5px var(--raised)}
+.si.done{border-color:var(--accent);background:var(--accent)}
+.si.canceled{border-color:var(--faint);background:linear-gradient(45deg,transparent 45%,var(--faint) 45% 55%,transparent 55%)}
+.people{font-size:13px;color:var(--faint)}
+.team{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 16px;margin:0;font-size:14px}
+.team dt{color:var(--muted)}
+.team dd{margin:0}
+
+.composer{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--raised);border-radius:14px;padding:6px 6px 6px 16px}
+.composer input{flex:1;min-width:0;font:inherit;border:0;background:none;color:var(--fg);padding:8px 0}
+.composer input::placeholder{color:var(--faint)}
+.composer input:focus{outline:none}
+.send{width:32px;height:32px;border:0;border-radius:9px;background:var(--pill);color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.send:not(:disabled){background:var(--accent);color:#fff}
+.send:disabled{cursor:default}
+
+.task{display:grid;grid-template-columns:14px 18px minmax(0,1fr);gap:0 8px;align-items:start;padding:3px 6px 3px 2px;border-radius:10px;position:relative;background:var(--bg)}
+.task:hover{background:var(--hover)}
+.task.dragging{background:var(--raised);box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:2;opacity:.95}
+.grip{all:unset;width:14px;height:22px;margin-top:6px;border-radius:4px;cursor:grab;color:var(--faint);opacity:0;display:grid;place-items:center;touch-action:none}
+.task:hover .grip,.grip:focus-visible,.task.dragging .grip{opacity:1}
+.grip:focus-visible{outline:2px solid var(--accent)}
+@media (hover:none){.grip{opacity:.6}}
+.task.dragging .grip{cursor:grabbing}
+.thead{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;padding:6px 4px;cursor:pointer;border-radius:8px;min-width:0}
+.thead:focus-visible{outline:2px solid var(--accent)}
+.thead .sub{grid-column:1}
+.tdetail{grid-column:3;padding:2px 4px 10px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.tdetail p{margin:0;color:var(--fg);max-width:62ch}
+.task input{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:9px 0 0;border:1.5px solid var(--faint);border-radius:50%;cursor:pointer;display:grid;place-content:center;background:none}
+.task input:checked{background:var(--accent);border-color:var(--accent)}
+.task input:checked::after{content:"";width:7px;height:3.5px;border:solid #fff;border-width:0 0 1.5px 1.5px;transform:rotate(-45deg) translate(.5px,-.5px)}
+.task.done .title{color:var(--faint);text-decoration:line-through}
+.task .sub a{color:var(--muted)}
+.late{color:var(--bad)}
+.empty{color:var(--faint);font-size:14px;padding:9px 10px}
+.note{font-size:13px;color:var(--faint);margin:0}
+@media (max-width:520px){.right{display:none}.row>button.head{grid-template-columns:18px minmax(0,1fr)}.thead{grid-template-columns:minmax(0,1fr)}}
+/* Телефон: крупнее зоны нажатия, ручка видна, без зума iOS на поле ввода */
+html{-webkit-text-size-adjust:100%}
+button,input,summary{-webkit-tap-highlight-color:transparent}
+@media (hover:none),(max-width:520px){
+  .task{grid-template-columns:24px 24px minmax(0,1fr);gap:0 6px}
+  .grip{width:24px;height:36px;margin-top:2px;opacity:.55}
+  .task input{width:20px;height:20px;margin:10px 0 0 2px}
+  .task input:checked::after{width:8px;height:4px}
+  .thead{padding:9px 4px;min-height:40px}
+  .tab{padding:8px 16px}
+  .composer input{font-size:16px}
+  .row>button.head{padding-top:10px;padding-bottom:10px}
+}
+[hidden]{display:none!important}
+/* v11: детали проекта на плашке, команда чипсами с аватарками и тултипом */
+.detail{margin:0 0 10px 30px;padding:14px 16px;border:0;border-radius:12px;background:var(--raised);gap:14px}
+.row.open>button.head:hover{background:none}
+.detail .chip{border-color:var(--line);background:var(--bg)}
+.chip.person{all:unset;box-sizing:border-box;position:relative;display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--fg);border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 10px 2px 2px;cursor:default}
+.chip.person:focus-visible{outline:2px solid var(--accent)}
+.av{position:relative;width:20px;height:20px;border-radius:50%;overflow:hidden;background:var(--pill);display:grid;place-items:center;flex:none}
+.av i{font-style:normal;font-size:9px;color:var(--muted);letter-spacing:.02em}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.chip.person[data-tip]:not([data-tip=""])::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:5;width:max-content;max-width:240px;white-space:normal;padding:6px 10px;border-radius:8px;background:var(--fg);color:var(--bg);font-size:12px;line-height:1.35;opacity:0;pointer-events:none;transform:translateY(2px);transition:opacity .12s,transform .12s}
+.chip.person[data-tip]:hover::after,.chip.person[data-tip]:focus-visible::after,.chip.person[data-tip].tip::after{opacity:1;transform:none}
+.digest{margin:0 -10px;padding:14px 10px 14px 10px}
+@media (max-width:520px){.detail{margin-left:0}}
+/* v10: кружок по левому краю заголовка секции, ховер чуть выходит за край, строки разделены линиями, ручка вынесена за строку */
+.rows>li{position:relative}
+.row,.task{margin:0 -10px}
+.row>button.head{padding:9px 10px}
+.rows>li.row+li.row::before,.rows>li.task+li.task::before{content:"";position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--line);pointer-events:none;transition:opacity .12s}
+.rows>li:hover::before,.rows>li:hover+li::before,.rows>li.dragging::before,.rows>li.dragging+li::before{opacity:0}
+.task{grid-template-columns:16px minmax(0,1fr);gap:0 12px;padding:2px 6px 2px 10px}
+.tdetail{grid-column:2}
+.grip{position:absolute;left:-14px;top:8px;margin:0;width:16px;height:24px}
+.task.dragging{border-radius:10px}
+.tlist .ph{padding-left:28px}
+@media (hover:none),(max-width:520px){
+  .task{grid-template-columns:20px minmax(0,1fr) 28px;gap:0 10px;padding-right:2px}
+  .task input{margin:10px 0 0}
+  .grip{position:static;grid-column:3;grid-row:1;width:28px;height:40px;opacity:.5}
+  .tdetail{grid-column:2/4}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* v12: единый радиус 10px, линии сверху и снизу списка, чипсы 32px без обводки, раскрытый проект одной карточкой */
+:root{--chip:rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chip:rgba(255,255,255,.07)}}
+:root[data-theme="dark"]{--chip:rgba(255,255,255,.07)}
+.digest{border-radius:10px}
+details.sec>summary{margin:0 -10px;padding:4px 10px;border-radius:10px}
+details.sec>summary:hover,details.sec>summary:focus-visible{background:var(--hover);outline:none}
+.rows>li.row::before,.rows>li.task::before{content:"";position:absolute;left:10px;right:10px;top:0;height:1px;background:var(--line);pointer-events:none;transition:opacity .12s}
+.rows>li.row:last-child::after,.rows>li.task:last-child::after,.rows>li.task:has(+li.ph)::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:1px;background:var(--line);pointer-events:none;transition:opacity .12s}
+.rows>li:hover::after,.rows>li.open::before,.rows>li.open::after,.rows>li.open+li::before,.rows>li.dragging::after{opacity:0}
+.chip,.chip.person,.detail .chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--chip);font-size:13px;box-sizing:border-box}
+.chip.person{padding:0 12px 0 4px;gap:8px}
+.chip.ref{gap:5px}
+.av{width:24px;height:24px;border-radius:6px}
+.av i{font-size:10px}
+.row.open{background:var(--hover);border-radius:10px}
+.row.open>button.head,.row.open>button.head:hover{background:none}
+.detail,.row.open .detail{margin:0 10px;padding:14px 0 16px 30px;background:none;border-radius:0;border-top:1px solid var(--line)}
+@media (max-width:520px){.detail,.row.open .detail{padding-left:0}}
+/* v13: no row dividers */
+.rows>li.row::before,.rows>li.task::before,.rows>li.row::after,.rows>li.task::after{content:none!important}
+/* v14: digest card */
+.digest{border:0;padding:4px 18px}
+.digest ul{list-style:none;padding:0;gap:0}
+.digest li{padding:10px 0}
+.digest li+li{border-top:1px solid var(--line)}
+/* v15: page side padding; hover/cards bleed 10px, so 26px keeps them 16px from the edge */
+body{padding-left:max(26px,calc(env(safe-area-inset-left,0px) + 10px));padding-right:max(26px,calc(env(safe-area-inset-right,0px) + 10px))}
+/* v16: tabs aligned with hover blocks */
+.tabs{margin-left:-10px}
+.tab,.tab:is(*){border-radius:10px;padding-left:10px;padding-right:10px}
+/* v17: expanded task = expanded project */
+.task.open{background:var(--hover)}
+.task.open .thead,.task.open .thead:hover{background:none}
+.tdetail,.task .tdetail{grid-column:1/-1;margin:6px 4px 0 0;padding:14px 0 16px 32px;border-top:1px solid var(--line);gap:14px;font-size:15px}
+@media (max-width:520px){.tdetail,.task .tdetail{padding-left:0;margin-right:8px}}
+/* v18: one chip style everywhere, hover = slightly lighter fill */
+:root{--chip-h:rgba(0,0,0,.07)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chip-h:rgba(255,255,255,.12)}}
+:root[data-theme="dark"]{--chip-h:rgba(255,255,255,.12)}
+.chip,.detail .chip,.tdetail .chip{color:var(--muted);background:var(--chip);transition:background .12s,color .12s}
+a.chip:hover,a.chip:focus-visible,.detail a.chip:hover,.tdetail a.chip:hover{color:var(--fg);background:var(--chip-h);outline:none}
+/* v19: no visible drag handle; drag the row itself */
+.grip{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:0!important;overflow:hidden;clip:rect(0 0 0 0);opacity:0!important}
+@media (hover:none),(max-width:520px){.task{grid-template-columns:20px minmax(0,1fr);padding-right:6px}}
+#open li.task .thead{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.task.dragging{cursor:grabbing}
+/* v20: section headers: no hover fill, text turns white */
+details.sec>summary{margin-bottom:2px}
+details.sec>summary:hover,details.sec>summary:focus-visible{background:none!important;color:var(--fg)}
+details.sec>summary:hover *,details.sec>summary:focus-visible *{color:var(--fg)}
+/* v21: near tasks in digest */
+#nowSec{margin-top:8px}
+.more{all:unset;cursor:pointer;margin:6px -10px 0;padding:6px 10px;border-radius:10px;font-size:14px;color:var(--muted)}
+.more:hover,.more:focus-visible{color:var(--fg)}
+/* v22: project tasks inside expanded project */
+.detail ul.ptasks{margin:0;padding:0;list-style:none;gap:0}
+.ptasks .task{background:none}
+.ptasks .task:hover,.ptasks .task.open{background:var(--chip)}
+/* v23: en dash bullets */
+.detail ul:not(.ptasks){list-style:none;padding-left:0}
+.detail ul:not(.ptasks)>li{position:relative;padding-left:16px}
+.detail ul:not(.ptasks)>li::before{content:"–";position:absolute;left:0;color:var(--faint)}
+
+/* v27: галочка — серый фон, чек по центру через mask */
+.task input:checked{background:var(--muted);border-color:var(--muted)}
+.task input:checked::after,.task input:checked::after{content:"";width:10px;height:10px;border:0;transform:none;background:var(--bg);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.2 5.2l1.9 1.9 3.8-4' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px 10px no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.2 5.2l1.9 1.9 3.8-4' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px 10px no-repeat}
+@media (hover:none),(max-width:520px){.task input:checked::after{width:12px;height:12px;-webkit-mask-size:12px 12px;mask-size:12px 12px}}
+.task input{margin-top:10px}
+@media (hover:none),(max-width:520px){.task input{margin-top:11px}}
+/* v29: иконки сервисов в чипсах */
+a.chip{gap:7px}a.chip.ref{gap:5px}a.chip.ref .lico{margin-right:2px}
+.lico{display:inline-flex;width:14px;height:14px;flex:none}.lico svg{width:14px;height:14px;display:block}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+
+<div class="wrap">
+  <div class="top">
+    <div class="tabs" role="tablist" aria-label="Разделы">
+      <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Дайджест</button>
+      <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Задачи<span class="n" id="tn"></span></button>
+    </div>
+    <span class="stamp" id="stamp">Загрузка…</span>
+  </div>
+
+  <section class="panel" id="digest" role="tabpanel" aria-labelledby="tab-digest">
+    <details class="sec" open>
+      <summary>Саммари</summary>
+      <div class="secbody digest"><ul id="summary"><li>Сводка появится после первого обновления.</li></ul></div>
+    </details>
+    <details class="sec" open id="nowSec" hidden>
+      <summary>Ближайшие задачи</summary>
+      <ul class="rows secbody" id="nowList"></ul>
+      <button type="button" class="more" id="toTasks">Все задачи</button>
+    </details>
+    <div id="groups"><p class="empty">Здесь появятся активные проекты.</p></div>
+    <p class="note" id="sources"></p>
+  </section>
+
+  <section class="panel" id="tasks" role="tabpanel" aria-labelledby="tab-tasks" hidden>
+    <form class="composer" id="addform">
+      <input id="newtask" type="text" placeholder="Добавить задачу…" aria-label="Новая задача" autocomplete="off">
+      <button class="send" type="submit" id="addbtn" disabled aria-label="Добавить"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </form>
+    <div id="open"><p class="empty">Загрузка…</p></div>
+    <details class="sec" id="doneSec" hidden>
+      <summary><span id="doneLabel">Закрытые</span></summary>
+      <ul class="rows secbody" id="doneList"></ul>
+    </details>
+    <details class="sec" id="archSec" hidden>
+      <summary><span id="archLabel">Архив</span></summary>
+      <ul class="rows secbody" id="archList"></ul>
+    </details>
+    <p class="note" id="tnote">Задачу можно перетащить мышью, а на телефоне удержать и вести. Правый клик или удержание без движения открывает меню статуса.</p>
+  </section>
+</div>
+
+<script src="/api/config"></script>
+<script src="/vendor/supabase-2.118.0.js"></script>
+<script src="/db.js"></script>
+<script>
+const GROUPS=[["blocked","Блокеры"],["waiting","Ждут дизайна"],["active","В работе"],["done","Закрыто"]];
+const STATE={blocked:"блокер",waiting:"ждёт дизайна",active:"в работе",done:"закрыто"};
+let projects=[],tasks=[],db=null;const openRows=new Set();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const today=iso(new Date()),tomorrow=iso(new Date(Date.now()+864e5));
+// «Эта неделя»: дни после завтра до воскресенья. В выходные это уже следующая неделя.
+const addD=(k,n)=>{const d=new Date(k+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)};
+const _dow=(new Date().getDay()+6)%7;let weekEnd=addD(today,6-_dow),weekLabel="Эта неделя";
+if(weekEnd<=tomorrow){weekEnd=addD(weekEnd,7);weekLabel="Следующая неделя"}
+const _fri=addD(weekEnd,-2),weekTarget=_fri>tomorrow?_fri:weekEnd;
+const inWeek=k=>!!k&&k>tomorrow&&k<=weekEnd;
+const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"short"})}catch{return d}};
+const chev=``;
+
+function setTab(name){
+  if(name!=="tasks")name="digest";
+  for(const b of document.querySelectorAll(".tab"))b.setAttribute("aria-selected",b.dataset.tab===name);
+  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";
+}
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;setTab(b.dataset.tab);history.replaceState(null,"","#"+b.dataset.tab)});
+window.addEventListener("hashchange",()=>setTab(location.hash.slice(1)));
+setTab(location.hash.slice(1));
+
+
+// иконки сервисов для чипсов ссылок
+const tile=(bg,ch,fg="#fff")=>`<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="4" fill="${bg}"/><text x="8" y="11.6" text-anchor="middle" font-size="10.5" font-weight="700" font-family="-apple-system,system-ui,sans-serif" fill="${fg}">${ch}</text></svg>`;
+const ICONS={
+  linear:`<svg viewBox="0 0 100 100"><path fill="#5E6AD2" d="M1.23 61.52c-.22-.95.91-1.55 1.6-.86l36.5 36.51c.7.7.1 1.82-.85 1.6C20.05 94.45 5.55 79.95 1.23 61.52ZM0 46.89c-.02.28.09.56.29.76l52.06 52.06c.2.2.48.3.76.29 2.37-.15 4.7-.46 6.96-.93.77-.16 1.03-1.1.48-1.65L2.58 39.45c-.55-.55-1.5-.29-1.65.48-.47 2.27-.78 4.59-.93 6.96ZM4.21 29.7c-.17.38-.08.82.21 1.1l64.78 64.78c.29.29.72.37 1.1.2 1.79-.8 3.52-1.69 5.19-2.68.55-.33.64-1.09.18-1.54L8.44 24.34c-.45-.46-1.21-.37-1.54.18-.99 1.67-1.89 3.4-2.69 5.19ZM12.66 18.07c-.37-.37-.39-.96-.04-1.35C21.78 6.46 35.11 0 49.95 0 77.59 0 100 22.41 100 50.05c0 14.84-6.46 28.17-16.72 37.34-.39.35-.98.33-1.35-.04L12.66 18.07Z"/></svg>`,
+  slack:`<svg viewBox="0 0 24 24"><rect x="8" y="2" width="3" height="9" rx="1.5" fill="#36C5F0"/><rect x="2" y="8" width="3" height="3" rx="1.5" fill="#36C5F0"/><rect x="13" y="8" width="9" height="3" rx="1.5" fill="#2EB67D"/><rect x="13" y="2" width="3" height="3" rx="1.5" fill="#2EB67D"/><rect x="13" y="13" width="3" height="9" rx="1.5" fill="#ECB22E"/><rect x="19" y="13" width="3" height="3" rx="1.5" fill="#ECB22E"/><rect x="2" y="13" width="9" height="3" rx="1.5" fill="#E01E5A"/><rect x="8" y="19" width="3" height="3" rx="1.5" fill="#E01E5A"/></svg>`,
+  figma:`<svg viewBox="-9 0 56 57"><path fill="#1ABCFE" d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/><path fill="#0ACF83" d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 1 1-19 0z"/><path fill="#FF7262" d="M19 0v19h9.5a9.5 9.5 0 1 0 0-19H19z"/><path fill="#F24E1E" d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z"/><path fill="#A259FF" d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z"/></svg>`,
+  granola:tile("#4F7A3A","G"),
+  notion:tile("var(--fg)","N","var(--bg)"),
+  paper:tile("var(--fg)","P","var(--bg)"),
+  gdocs:`<svg viewBox="0 0 16 16"><path d="M3.5 1h6l3.5 3.5V14a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="#4285F4"/><path d="M9.5 1v3.5H13z" fill="#A1C2FA"/><path d="M5 8h6M5 10h6M5 12h4" stroke="#fff" stroke-width="1"/></svg>`,
+  space:tile("#8B5CF6","S"),
+  onepage:tile("#2F6BFF","1"),
+  claude:`<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="4" fill="#D97757"/><path d="M8 3.2v9.6M3.2 8h9.6M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  link:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 0 0-3.7-3.7l-.6.6"/><path d="M9.2 6.8a2.6 2.6 0 0 0-3.7 0L3.3 9a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/></svg>`
+};
+function svcOf(u){let h="";try{h=new URL(u).hostname}catch{}
+  return /linear\.app$/.test(h)?"linear":/slack\.com$/.test(h)?"slack":/figma\.com$/.test(h)?"figma":/granola\.(ai|so)$/.test(h)?"granola":/notion\.(so|site)$/.test(h)?"notion":/paper\.(design|dropbox\.com)$/.test(h)||/^paper\./.test(h)?"paper":/docs\.google\.com$/.test(h)?"gdocs":/jetbrains\.space$|\.space$/.test(h)?"space":/onlypage\.dev$|onepage\.io$/.test(h)?"onepage":/claude\.ai$/.test(h)?"claude":"link"}
+const ico=(u,k)=>`<span class="lico" aria-hidden="true">${ICONS[k||svcOf(u)]}</span>`;
+const linkChip=l=>`<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener">${ico(l.url)}${esc(l.label)}</a>`;
+const ul=a=>a&&a.length?`<ul>${a.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:"";
+function refsHtml(p){const r=p.refs||{};const ks=[["slack","Slack"],["linear","Linear"],["space","Space"]].filter(([k])=>r[k]&&r[k].url);
+  return ks.length?`<div class="chips">${ks.map(([k,n])=>`<a class="chip ref" href="${esc(r[k].url)}" target="_blank" rel="noopener">${ico(r[k].url,k)}<b>${n}</b>${r[k].label?` ${esc(r[k].label)}`:""}</a>`).join("")}</div>`:""}
+const initials=n=>String(n||"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+function teamHtml(p){
+  const ms=p.members&&p.members.length?p.members:null;
+  if(!ms){return p.team&&p.team.length?`<div><h4>Команда</h4><dl class="team">${p.team.map(t=>`<dt>${esc(t.role)}</dt><dd>${esc(t.who)}</dd>`).join("")}</dl></div>`:""}
+  return `<div><h4>Команда</h4><div class="chips">${ms.map(m=>{const tip=[m.role,m.does].filter(Boolean).join(" · ");
+    return `<button type="button" class="chip person" data-tip="${esc(tip)}" aria-label="${esc(m.name)}: ${esc(tip)}"><span class="av">${m.avatar?`<img src="${esc(m.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}<i>${esc(initials(m.name))}</i></span>${esc(m.name)}</button>`}).join("")}</div></div>`}
+function projRow(p){
+  const open=openRows.has(p.id);
+  const sub=(p.design&&p.design[0])||(p.now&&p.now[0])||"";
+  return `<li class="row ${open?"open":""}">
+    <button class="head" type="button" data-id="${esc(p.id)}" aria-expanded="${open}">
+      <span class="ico ${esc(p.state)}"></span><span class="title">${esc(p.name)}</span><span class="right">${p.updated?esc(fd(p.updated)):""}</span>
+      <span class="sub">${esc(sub)}</span>
+    </button>
+    ${open?`<div class="detail">
+      ${refsHtml(p)}
+      ${teamHtml(p)}
+      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Задачи</h4><ul class="rows ptasks">${ts.map(taskRow).join("")}</ul></div>`:""})()}
+      ${p.design&&p.design.length?`<div><h4>От дизайна</h4>${ul(p.design)}</div>`:""}
+      ${p.now&&p.now.length?`<div><h4>Что происходит</h4>${ul(p.now)}</div>`:""}
+      ${(p.links||[]).length?`<div><h4>Материалы</h4><div class="chips">${p.links.map(linkChip).join("")}</div></div>`:""}
+    </div>`:""}
+  </li>`;
+}
+function renderProjects(){
+  if(!projects.length)return;
+  const prev={};document.querySelectorAll("#groups details").forEach(d=>prev[d.dataset.g]=d.open);
+  $("groups").innerHTML=GROUPS.map(([k,l])=>{
+    const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
+    if(!ps.length)return"";
+    const isOpen=prev[k]??(k!=="done");
+    return `<details class="sec" data-g="${k}" ${isOpen?"open":""} style="margin-bottom:24px"><summary>${l} · ${ps.length}</summary><ul class="rows secbody">${ps.map(projRow).join("")}</ul></details>`;
+  }).join("");
+}
+document.addEventListener("error",e=>{if(e.target.tagName==="IMG"&&e.target.closest(".av"))e.target.remove()},true);
+document.addEventListener("click",e=>{const c=e.target.closest(".chip.person");document.querySelectorAll(".chip.person.tip").forEach(x=>{if(x!==c)x.classList.remove("tip")});if(c)c.classList.toggle("tip")});
+$("groups").addEventListener("click",e=>{const b=e.target.closest("button.head");if(!b)return;const id=b.dataset.id;openRows.has(id)?openRows.delete(id):openRows.add(id);renderProjects()});
+
+const openTasks=new Set();let dragging=false;
+const ST=[["todo","К выполнению"],["progress","В работе"],["done","Готово"],["canceled","Отменено"]];
+const st=t=>t.status||(t.done?"done":"todo");
+const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
+function taskRow(t){
+  const s=st(t),closed=!isOpenSt(t);
+  const late=t.due&&!closed&&t.due<today;
+  const isOpen=openTasks.has(t.id);
+  const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Источник",url:t.url}]:[])];
+  const sub=[t.project&&esc(t.project),t.source&&esc(t.source)].filter(Boolean).join(" · ");
+  return `<li class="task ${closed?"done":""} ${s==="progress"?"prog":""} ${s==="canceled"?"canceled":""} ${isOpen?"open":""}" data-id="${esc(t.id)}">
+    ${closed?"":`<button class="grip" type="button" aria-label="Перетащить: ${esc(t.title)}" title="Перетащить"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
+    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Выполнено: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
+    <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
+      <span class="title">${esc(t.title)}</span><span class="right ${late?"late":""}">${t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short"})):""}</span>
+      ${sub?`<span class="sub">${sub}</span>`:""}
+    </button>
+    ${isOpen?`<div class="tdetail">
+      <p>${t.description?esc(t.description):`<span class="s" style="color:var(--faint)">Контекста пока нет.</span>`}</p>
+      ${links.length?`<div class="chips">${links.map(linkChip).join("")}</div>`:""}
+    </div>`:""}
+  </li>`;
+}
+let suppressClick=false,suppressUntil=0;
+function toggleTask(e){const b=e.target.closest("button.thead");if(!b)return;if(suppressClick||Date.now()<suppressUntil){suppressClick=false;return}const id=b.dataset.id;openTasks.has(id)?openTasks.delete(id):openTasks.add(id);renderTasks()}
+$("open").addEventListener("click",toggleTask);$("nowList").addEventListener("click",toggleTask);$("groups").addEventListener("click",toggleTask);$("toTasks").addEventListener("click",()=>{setTab("tasks");history.replaceState(null,"","#tasks");scrollTo(0,0)});$("doneList").addEventListener("click",toggleTask);$("archList").addEventListener("click",toggleTask);
+
+// Drag and drop: перетаскивание за ручку слева, работает мышью и пальцем; клавиатурой — стрелки вверх/вниз на ручке
+async function saveOrder(li){
+  const lis=[...li.parentNode.querySelectorAll("li.task")];const i=lis.indexOf(li);
+  const ord=el=>tasks.find(t=>t.id===el.dataset.id)?.order??500;
+  const prev=lis[i-1],next=lis[i+1];
+  let o=prev&&next?(ord(prev)+ord(next))/2:prev?ord(prev)+1:next?ord(next)-1:0;
+  const t=tasks.find(x=>x.id===li.dataset.id);if(!t||!db)return;t.order=o;
+  let due=li.parentNode.dataset.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;const patch={order:o};
+  if((t.due||null)!==due){patch.due=due;t.due=due}
+  try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Порядок не сохранился. Попробуйте ещё раз."}
+}
+// v19: тянем саму строку. Мышь: зажать и сдвинуть на 5px. Палец: удержать ~0.4 с и вести; отпустил без движения — меню статуса.
+(()=>{const L=$("open");let st=null;
+  L.addEventListener("touchmove",e=>{if(st&&st.armed)e.preventDefault()},{passive:false});
+  L.addEventListener("pointerdown",e=>{
+    if(!db||e.button!==0)return;const h=e.target.closest(".thead");if(!h)return;const li=h.closest("li.task");if(!li)return;
+    const touch=e.pointerType!=="mouse";if(!touch)e.preventDefault();
+    st={li,id:e.pointerId,x0:e.clientX,y0:e.clientY,startY:e.clientY,armed:false,moved:false,touch};
+    if(touch)st.timer=setTimeout(()=>{if(st&&!st.armed){navigator.vibrate?.(10);arm()}},420);
+  });
+  let arm=function(){st.armed=true;dragging=true;st.li.classList.add("dragging");try{st.li.setPointerCapture(st.id)}catch{}}
+  L.addEventListener("pointermove",e=>{if(!st||e.pointerId!==st.id)return;
+    const d=Math.hypot(e.clientX-st.x0,e.clientY-st.y0);
+    if(!st.armed){if(st.touch){if(d>8){clearTimeout(st.timer);st=null}return}if(d<5)return;arm()}
+    e.preventDefault();st.y=e.clientY;place();
+  });
+  function place(){if(!st||!st.armed)return;const li=st.li,y=st.y;
+    {const r=li.getBoundingClientRect();if(y>=r.top&&y<=r.bottom)return}
+    const cands=[...L.querySelectorAll("li.task:not(.dragging),li.ph")].filter(x=>x.offsetParent&&!x.closest("details:not([open])"));
+    let tgt=null,prev=null;for(const c of cands){const r=c.getBoundingClientRect();if(y<r.top+r.height/2){tgt=c;break}prev=c}
+    let ul,before;
+    if(tgt){const det=tgt.closest("details");if(prev&&prev.parentNode!==tgt.parentNode&&y<det.getBoundingClientRect().top){ul=prev.parentNode;before=ul.querySelector("li.ph")}else{ul=tgt.parentNode;before=tgt}}
+    else if(prev){ul=prev.parentNode;before=ul.querySelector("li.ph")}
+    if(ul&&before!==li&&li.nextElementSibling!==before){ul.insertBefore(li,before);st.moved=true}
+  }
+  // автопрокрутка у краёв экрана во время перетаскивания
+  function tick(){if(!st||!st.armed)return;const y=st.y,h=innerHeight,z=Math.min(90,h*.15);let v=0;
+    if(y<z)v=-Math.ceil((z-y)/z*18);else if(y>h-z)v=Math.ceil((y-(h-z))/z*18);
+    if(v){const se=document.scrollingElement;const before=se.scrollTop;se.scrollTop+=v;if(se.scrollTop!==before)place()}
+    requestAnimationFrame(tick)}
+  const _arm=arm;arm=function(){_arm();st.y=st.y??st.y0;requestAnimationFrame(tick)};
+  const end=async e=>{if(!st||e.pointerId!==st.id)return;const s=st;st=null;clearTimeout(s.timer);if(!s.armed)return;
+    s.li.style.transform="";s.li.classList.remove("dragging");dragging=false;suppressUntil=Date.now()+150;
+    if(s.moved)await saveOrder(s.li);else if(s.touch&&e.type==="pointerup")openMenu(s.li.dataset.id,s.x0,s.y0);
+    renderTasks()};
+  L.addEventListener("pointerup",end);L.addEventListener("pointercancel",end);
+})();
+$("open").addEventListener("keydown",async e=>{
+  const g=e.target.closest(".grip");if(!g||!db||(e.key!=="ArrowUp"&&e.key!=="ArrowDown"))return;e.preventDefault();
+  const li=g.closest("li.task"),list=$("open"),ul=li.parentNode;
+  const lists=[...list.querySelectorAll("ul.tlist")],li_=lists.indexOf(ul);
+  const prevT=li.previousElementSibling?.classList.contains("task")?li.previousElementSibling:null;
+  const nextT=li.nextElementSibling?.classList.contains("task")?li.nextElementSibling:null;
+  if(e.key==="ArrowUp"){if(prevT)ul.insertBefore(li,prevT);else if(lists[li_-1])lists[li_-1].insertBefore(li,lists[li_-1].querySelector(".ph"));else return}
+  else{if(nextT)ul.insertBefore(nextT,li);else if(lists[li_+1])lists[li_+1].insertBefore(li,lists[li_+1].firstChild);else return}
+  await saveOrder(li);renderTasks();list.querySelector(`li[data-id="${CSS.escape(li.dataset.id)}"] .grip`)?.focus();
+});
+
+let pendingRender=false;
+// закрытые сегодня остаются на месте с отметкой, в «Закрытые» уходят со следующего дня
+// отменённые сразу уходят в «Архив»
+const keepInList=t=>isOpenSt(t)||(st(t)==="done"&&!!t.doneAt&&iso(new Date(t.doneAt))===today);
+function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=false;
+  if(dragging)return;
+  const vis=tasks.filter(t=>st(t)!=="removed");
+  const open=vis.filter(keepInList).sort((a,b)=>(a.order??500)-(b.order??500)||(a.id<b.id?-1:1));
+  const byDone=(a,b)=>(b.doneAt||"")>(a.doneAt||"")?1:-1;
+  const done=vis.filter(t=>!keepInList(t)&&st(t)!=="canceled").sort(byDone);
+  const arch=vis.filter(t=>st(t)==="canceled").sort(byDone);
+  $("archLabel").textContent=`Архив · ${arch.length}`;$("archList").innerHTML=arch.map(taskRow).join("");$("archSec").hidden=!arch.length;
+  $("tn").textContent=open.filter(isOpenSt).length||"";
+  $("doneLabel").textContent=`Закрытые · ${done.length}`;
+  const prev={};$("open").querySelectorAll("details").forEach(d=>prev[d.dataset.k]=d.open);
+  const keys=new Set([today,tomorrow,"week",...open.filter(t=>t.due&&!inWeek(t.due)).map(t=>t.due)]);
+  const sk=k=>k==="week"?weekEnd+"~":k;
+  const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);
+  const wd=k=>new Date(k+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short",day:"numeric",month:"short"});
+  const label=k=>!k?"Остальное":k==="week"?weekLabel:k===today?"Сегодня":k===tomorrow?"Завтра":k<today?`<span class="late">${esc(fd(k))} · просрочено</span>`:esc(wd(k));
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${ts.filter(isOpenSt).length?` · ${ts.filter(isOpenSt).length}`:""}</summary><ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Перетащи сюда, чтобы запланировать на неделю":k?"Перетащи сюда, чтобы назначить на этот день":"Без даты"}</li></ul></details>`).join("");
+  $("doneList").innerHTML=done.map(taskRow).join("");
+  if(projects.length)renderProjects();
+  {const near=open.filter(t=>t.due&&t.due<=tomorrow).sort((a,b)=>(a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)));
+   const pick=(near.length?near:open).slice(0,6);
+   $("nowList").innerHTML=pick.map(taskRow).join("");$("nowSec").hidden=!pick.length;
+   $("toTasks").textContent=open.filter(isOpenSt).length>pick.length?`Все задачи · ${open.filter(isOpenSt).length}`:"Все задачи";}
+  $("doneSec").hidden=!done.length;
+}
+async function onCheck(e){
+  const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
+  try{await setStatus(cb.dataset.id,done?"done":"todo")}
+  catch{cb.checked=!done;$("tnote").textContent="Не удалось сохранить отметку. Обновите страницу и попробуйте ещё раз."}
+}
+async function setStatus(id,s){
+  const closed=s==="done"||s==="canceled";
+  await db.collection("tasks").doc(id).update({status:s,done:s==="done",doneAt:closed?new Date().toISOString():null});
+}
+// Контекстное меню статуса: правый клик, долгое нажатие на телефоне или клавиша меню
+let menuEl=null;
+function closeMenu(){if(menuEl){menuEl.remove();menuEl=null}}
+function openMenu(id,x,y){
+  closeMenu();const t=tasks.find(z=>z.id===id);if(!t||!db)return;const cur=st(t);
+  menuEl=document.createElement("div");menuEl.className="menu";menuEl.setAttribute("role","menu");
+  menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Убрать задачу</span><span></span></button>`;
+  document.body.appendChild(menuEl);
+  const r=menuEl.getBoundingClientRect();
+  menuEl.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";
+  menuEl.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+"px";
+  menuEl.querySelector("button").focus();
+  menuEl.addEventListener("click",async e=>{const b=e.target.closest("button[data-s]");if(!b)return;closeMenu();
+    try{await setStatus(id,b.dataset.s)}catch{$("tnote").textContent="Статус не сохранился. Попробуйте ещё раз."}});
+  menuEl.addEventListener("keydown",e=>{const bs=[...menuEl.querySelectorAll("button")],i=bs.indexOf(document.activeElement);
+    if(e.key==="ArrowDown"){e.preventDefault();bs[(i+1)%bs.length].focus()}
+    else if(e.key==="ArrowUp"){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus()}
+    else if(e.key==="Escape"){closeMenu();document.querySelector(`li[data-id="${CSS.escape(id)}"] .thead`)?.focus()}});
+}
+document.addEventListener("pointerdown",e=>{if(menuEl&&!menuEl.contains(e.target))closeMenu()});
+addEventListener("scroll",closeMenu,true);addEventListener("resize",closeMenu);
+for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups")]){
+  L.addEventListener("contextmenu",e=>{const li=e.target.closest("li.task");if(!li||e.target.closest("a"))return;e.preventDefault();
+    let x=e.clientX,y=e.clientY;if(!x&&!y){const r=li.getBoundingClientRect();x=r.left+40;y=r.bottom}openMenu(li.dataset.id,x,y)});
+  let lp=null;
+  L.addEventListener("pointerdown",e=>{if(L===$("open")||e.pointerType==="mouse"||!e.target.closest(".thead"))return;
+    const li=e.target.closest("li.task"),x0=e.clientX,y0=e.clientY;
+    lp={x0,y0,timer:setTimeout(()=>{suppressClick=true;navigator.vibrate?.(10);openMenu(li.dataset.id,x0,y0);lp=null},480)}});
+  L.addEventListener("pointermove",e=>{if(lp&&Math.hypot(e.clientX-lp.x0,e.clientY-lp.y0)>8){clearTimeout(lp.timer);lp=null}});
+  for(const ev of ["pointerup","pointercancel"])L.addEventListener(ev,()=>{if(lp){clearTimeout(lp.timer);lp=null}});
+}
+$("open").addEventListener("change",onCheck);$("nowList").addEventListener("change",onCheck);$("groups").addEventListener("change",onCheck);$("doneList").addEventListener("change",onCheck);$("archList").addEventListener("change",onCheck);
+$("newtask").addEventListener("input",e=>{$("addbtn").disabled=!e.target.value.trim()||!db});
+$("addform").addEventListener("submit",async e=>{
+  e.preventDefault();const v=$("newtask").value.trim();if(!v||!db)return;
+  $("newtask").value="";$("addbtn").disabled=true;
+  const top=Math.min(0,...tasks.filter(isOpenSt).map(t=>t.order??500))-1;
+  try{await db.collection("tasks").add({title:v,done:false,status:"todo",addedBy:"max",source:"добавлено вручную",createdAt:new Date().toISOString(),order:top})}
+  catch{$("newtask").value=v;$("tnote").textContent="Задача не сохранилась. Попробуйте ещё раз."}
+});
+
+(async()=>{
+  db=await window.radarDB();
+  if(!db){$("stamp").textContent="Нет связи с базой";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Задачи не загрузились. Проверь интернет и обнови страницу.</li>`;return}
+  const timer=setTimeout(()=>{$("stamp").textContent="Данные пока не загрузились"},10000);
+  db.collection("projects").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);projects=s.docs.map(d=>({id:d.id,...d.data()}));renderProjects()},()=>clearTimeout(timer));
+  db.collection("tasks").onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks()},()=>{});
+  db.doc("meta/summary").onSnapshot(s=>{
+    if(!s.exists)return;const m=s.data();
+    $("stamp").textContent=`Обновлено ${fd(m.date)}${m.time?", "+m.time:""}`;
+    $("summary").innerHTML=(m.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("");
+    $("sources").textContent=m.sources?`Источники: ${m.sources}`:"";
+  },()=>{});
+})();
+</script>
