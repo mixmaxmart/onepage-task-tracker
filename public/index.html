@@ -263,22 +263,32 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .mcard .mq{font-size:12px;color:var(--faint);flex:none}
 .mcard.now .mt{color:var(--accent)}
 .mcard.past{opacity:.45}
-/* v30: Feed tab — one section per day */
-.fday+.fday{margin-top:18px}
-.fday .fsum{margin:0 -10px 6px;padding:2px 10px}
-.fday .fsum ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
-.fday .fsum li{font-size:14px;line-height:1.45}
-.fday .fsum li::before{content:"·";color:var(--faint);margin-right:8px}
-.fsub{font-size:12px;color:var(--faint);margin:10px 0 4px;letter-spacing:.02em}
-.fcall{display:block;margin:0 -10px 2px;padding:8px 10px;background:var(--chip);border-radius:10px;color:var(--fg);text-decoration:none;font-size:14px}
-a.fcall:hover,a.fcall:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));outline:none}
-.fcall .fh{display:flex;align-items:center;gap:12px}
-.fcall .mt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;flex:none}
-.fcall .mn{flex:1;min-width:0}
-.fcall .lico{opacity:.9}
-.fcall ul{margin:6px 0 0;padding:0 0 0 0;list-style:none;display:flex;flex-direction:column;gap:3px;color:var(--muted);font-size:13px;line-height:1.4}
-.fcall ul li::before{content:"–";color:var(--faint);margin-right:6px}
-.fempty{font-size:13px;color:var(--faint);padding:4px 0}
+/* v31: Feed — each day on a filled block like the digest; calls are an accordion */
+.fday+.fday{margin-top:22px}
+.fblock{margin:12px -10px 0;padding:4px 18px 8px;background:var(--raised);border-radius:10px}
+.fsum{list-style:none;margin:0;padding:0}
+.fsum li{padding:10px 0;font-size:15px;line-height:1.5}
+.fsum li+li{border-top:1px solid var(--line)}
+.fsub{font-size:13px;color:var(--faint);margin:14px 0 4px}
+.fsum+.fsub{margin-top:10px;padding-top:12px;border-top:1px solid var(--line)}
+.fcalls{display:flex;flex-direction:column;gap:2px}
+.fcall{margin:0 -8px;border-radius:10px}
+.fcall.open{background:var(--pill)}
+.fch{display:flex;align-items:center;gap:12px;width:100%;padding:9px 8px;background:none;border:0;border-radius:10px;color:var(--fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.fch:hover,.fch:focus-visible{background:var(--pill);outline:none}
+.fcall.open .fch:hover{background:none}
+.fch .mt{font-variant-numeric:tabular-nums;color:var(--muted);flex:none;min-width:94px}
+.fch .mn{flex:1;min-width:0}
+.fch .chev{width:10px;height:10px;color:var(--faint);flex:none;transition:transform .15s}
+.fcall:not(.open) .fch .chev{transform:rotate(-90deg)}
+.fbody{padding:0 8px 12px 114px}
+.fbody ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:15px;line-height:1.5}
+.fbody .flink{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:6px 12px;border-radius:8px;background:var(--bg);color:var(--fg);text-decoration:none;font-size:14px}
+.fbody .flink:hover{background:var(--hover)}
+.fblock .rows{margin:0}.fblock .task{background:none;margin:0 -8px}
+.fblock .task:hover,.fblock .task.open{background:var(--pill)}
+.fempty{font-size:15px;color:var(--faint);padding:10px 0}
+@media (max-width:520px){.fbody{padding-left:8px}.fch .mt{min-width:0}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -335,7 +345,7 @@ a.fcall:hover,a.fcall:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 <script>
 const GROUPS=[["blocked","Blocked"],["waiting","Waiting for design"],["active","In progress"],["done","Done"]];
 const STATE={blocked:"blocked",waiting:"waiting for design",active:"in progress",done:"done"};
-let projects=[],tasks=[],meetings=[],feed=[],db=null;const openRows=new Set();
+let projects=[],tasks=[],meetings=[],feed=[],db=null;const openCalls=new Set();const openRows=new Set();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -568,13 +578,13 @@ function renderFeed(){
     const f=feed.find(x=>x.id===k)||{},sum=f.summary||[],calls=(f.calls||[]).slice().sort((a,b)=>new Date(a.start)-new Date(b.start)),done=closedOn(k);
     const head=(k===today?"Today, ":k===yest?"Yesterday, ":"")+wd(k);
     const meta=[calls.length?`${calls.length} call${calls.length>1?"s":""}`:"",done.length?`${done.length} closed`:""].filter(Boolean).map(x=>" · "+x).join("");
-    const callHtml=calls.map(c=>{const a=new Date(c.start),b=new Date(c.end||c.start),tag=c.url?"a":"div",href=c.url?` href="${esc(c.url)}" target="_blank" rel="noopener"`:"";
-      return `<${tag} class="fcall"${href}><span class="fh"><span class="mt">${c.start?hm(a)+"–"+hm(b):""}</span><span class="mn">${esc(c.title)}</span>${c.url?`<span class="lico">${ICONS[svcOf(c.url)]||""}</span>`:""}</span>${(c.outcomes||[]).length?`<ul>${c.outcomes.map(o=>`<li>${esc(o)}</li>`).join("")}</ul>`:""}</${tag}>`}).join("");
-    const body=(sum.length?`<div class="fsum"><ul>${sum.map(b=>`<li>${esc(b)}</li>`).join("")}</ul></div>`:"")
-      +(calls.length?`<div class="fsub">Calls</div>${callHtml}`:"")
-      +(done.length?`<div class="fsub">Closed</div><ul class="rows secbody">${done.map(taskRow).join("")}</ul>`:"")
+    const callHtml=calls.map(c=>{const a=new Date(c.start),b=new Date(c.end||c.start),key=k+"|"+(c.id||c.title),op=openCalls.has(key),out=c.outcomes||[];
+      return `<div class="fcall${op?" open":""}"><button type="button" class="fch" data-call="${esc(key)}" aria-expanded="${op}"><span class="mt">${c.start?hm(a)+"–"+hm(b):""}</span><span class="mn">${esc(c.title)}</span><svg class="chev"><use href="#chev"/></svg></button>${op?`<div class="fbody">${out.length?`<ul>${out.map(o=>`<li>${esc(o)}</li>`).join("")}</ul>`:""}${c.url?`<a class="flink" href="${esc(c.url)}" target="_blank" rel="noopener"><span class="lico">${ICONS[svcOf(c.url)]||""}</span>Open in Granola</a>`:""}</div>`:""}</div>`}).join("");
+    const body=(sum.length?`<ul class="fsum">${sum.map(b=>`<li>${esc(b)}</li>`).join("")}</ul>`:"")
+      +(calls.length?`<div class="fsub">Calls</div><div class="fcalls">${callHtml}</div>`:"")
+      +(done.length?`<div class="fsub">Closed</div><ul class="rows">${done.map(taskRow).join("")}</ul>`:"")
       +(!sum.length&&!calls.length&&!done.length?`<p class="fempty">Nothing recorded for this day.</p>`:"");
-    return `<details class="sec fday" data-k="${k}" ${prev[k]===false?"":"open"}><summary>${esc(head)}${meta}</summary>${body}</details>`}).join("");
+    return `<details class="sec fday" data-k="${k}" ${prev[k]===false?"":"open"}><summary>${esc(head)}${meta}</summary><div class="fblock">${body}</div></details>`}).join("");
 }
 async function onCheck(e){
   const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
@@ -616,7 +626,7 @@ for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups"),$
   L.addEventListener("pointermove",e=>{if(lp&&Math.hypot(e.clientX-lp.x0,e.clientY-lp.y0)>8){clearTimeout(lp.timer);lp=null}});
   for(const ev of ["pointerup","pointercancel"])L.addEventListener(ev,()=>{if(lp){clearTimeout(lp.timer);lp=null}});
 }
-$("open").addEventListener("change",onCheck);$("nowList").addEventListener("change",onCheck);$("groups").addEventListener("change",onCheck);$("doneList").addEventListener("change",onCheck);$("archList").addEventListener("change",onCheck);$("feedDays").addEventListener("change",onCheck);$("feedDays").addEventListener("click",toggleTask);
+$("open").addEventListener("change",onCheck);$("nowList").addEventListener("change",onCheck);$("groups").addEventListener("change",onCheck);$("doneList").addEventListener("change",onCheck);$("archList").addEventListener("change",onCheck);$("feedDays").addEventListener("change",onCheck);$("feedDays").addEventListener("click",e=>{const c=e.target.closest(".fch");if(c){const k=c.dataset.call;openCalls.has(k)?openCalls.delete(k):openCalls.add(k);renderFeed();return}toggleTask(e)});
 $("newtask").addEventListener("input",e=>{$("addbtn").disabled=!e.target.value.trim()||!db});
 $("addform").addEventListener("submit",async e=>{
   e.preventDefault();const v=$("newtask").value.trim();if(!v||!db)return;
