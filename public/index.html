@@ -263,6 +263,22 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .mcard .mq{font-size:12px;color:var(--faint);flex:none}
 .mcard.now .mt{color:var(--accent)}
 .mcard.past{opacity:.45}
+/* v30: Feed tab — one section per day */
+.fday+.fday{margin-top:18px}
+.fday .fsum{margin:0 -10px 6px;padding:2px 10px}
+.fday .fsum ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.fday .fsum li{font-size:14px;line-height:1.45}
+.fday .fsum li::before{content:"·";color:var(--faint);margin-right:8px}
+.fsub{font-size:12px;color:var(--faint);margin:10px 0 4px;letter-spacing:.02em}
+.fcall{display:block;margin:0 -10px 2px;padding:8px 10px;background:var(--chip);border-radius:10px;color:var(--fg);text-decoration:none;font-size:14px}
+a.fcall:hover,a.fcall:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));outline:none}
+.fcall .fh{display:flex;align-items:center;gap:12px}
+.fcall .mt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;flex:none}
+.fcall .mn{flex:1;min-width:0}
+.fcall .lico{opacity:.9}
+.fcall ul{margin:6px 0 0;padding:0 0 0 0;list-style:none;display:flex;flex-direction:column;gap:3px;color:var(--muted);font-size:13px;line-height:1.4}
+.fcall ul li::before{content:"–";color:var(--faint);margin-right:6px}
+.fempty{font-size:13px;color:var(--faint);padding:4px 0}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -272,6 +288,7 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
     <div class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Digest</button>
       <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Tasks<span class="n" id="tn"></span></button>
+      <button class="tab" role="tab" id="tab-feed" aria-controls="feed" aria-selected="false" data-tab="feed">Feed</button>
     </div>
     <span class="stamp" id="stamp">Loading…</span>
   </div>
@@ -306,6 +323,10 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
     </details>
     <p class="note" id="tnote">Drag a task with the mouse, or press and hold on a phone. Right-click or a long press opens the status menu.</p>
   </section>
+
+  <section class="panel" id="feed" role="tabpanel" aria-labelledby="tab-feed" hidden>
+    <div id="feedDays"><p class="empty">The feed fills in after each update: a summary of the day, calls with their outcomes and closed tasks.</p></div>
+  </section>
 </div>
 
 <script src="/config.js"></script>
@@ -314,7 +335,7 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 <script>
 const GROUPS=[["blocked","Blocked"],["waiting","Waiting for design"],["active","In progress"],["done","Done"]];
 const STATE={blocked:"blocked",waiting:"waiting for design",active:"in progress",done:"done"};
-let projects=[],tasks=[],meetings=[],db=null;const openRows=new Set();
+let projects=[],tasks=[],meetings=[],feed=[],db=null;const openRows=new Set();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -329,9 +350,9 @@ const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("en-US",{day:
 const chev=``;
 
 function setTab(name){
-  if(name!=="tasks")name="digest";
+  if(name!=="tasks"&&name!=="feed")name="digest";
   for(const b of document.querySelectorAll(".tab"))b.setAttribute("aria-selected",b.dataset.tab===name);
-  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";
+  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";$("feed").hidden=name!=="feed";
 }
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;setTab(b.dataset.tab);history.replaceState(null,"","#"+b.dataset.tab)});
 window.addEventListener("hashchange",()=>setTab(location.hash.slice(1)));
@@ -530,6 +551,30 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
    $("nowList").innerHTML=pick.map(taskRow).join("");$("nowSec").hidden=!pick.length;
    $("toTasks").textContent=open.filter(isOpenSt).length>pick.length?`All tasks · ${open.filter(isOpenSt).length}`:"All tasks";}
   $("doneSec").hidden=!done.length;
+  renderFeed();
+}
+// Лента по дням: feed/<YYYY-MM-DD> = {summary[], calls[{title,start,end,url,outcomes[]}]} + задачи, закрытые в этот день (из tasks).
+function renderFeed(){
+  const L=$("feedDays");if(!L)return;
+  const closedOn=k=>tasks.filter(t=>st(t)==="done"&&t.doneAt&&iso(new Date(t.doneAt))===k).sort((a,b)=>(a.doneAt||"")<(b.doneAt||"")?-1:1);
+  const from=addD(today,-30),days=new Set(feed.map(f=>f.id).filter(k=>k<=today));
+  for(const t of tasks)if(st(t)==="done"&&t.doneAt){const k=iso(new Date(t.doneAt));if(k>=from&&k<=today)days.add(k)}
+  const list=[...days].sort().reverse();
+  if(!list.length){L.innerHTML=`<p class="empty">The feed fills in after each update: a summary of the day, calls with their outcomes and closed tasks.</p>`;return}
+  const prev={};L.querySelectorAll("details").forEach(d=>prev[d.dataset.k]=d.open);
+  const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"long"})+", "+d.toLocaleDateString("en-US",{day:"numeric",month:"long"})};
+  const yest=addD(today,-1),hm=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  L.innerHTML=list.map(k=>{
+    const f=feed.find(x=>x.id===k)||{},sum=f.summary||[],calls=(f.calls||[]).slice().sort((a,b)=>new Date(a.start)-new Date(b.start)),done=closedOn(k);
+    const head=(k===today?"Today, ":k===yest?"Yesterday, ":"")+wd(k);
+    const meta=[calls.length?`${calls.length} call${calls.length>1?"s":""}`:"",done.length?`${done.length} closed`:""].filter(Boolean).map(x=>" · "+x).join("");
+    const callHtml=calls.map(c=>{const a=new Date(c.start),b=new Date(c.end||c.start),tag=c.url?"a":"div",href=c.url?` href="${esc(c.url)}" target="_blank" rel="noopener"`:"";
+      return `<${tag} class="fcall"${href}><span class="fh"><span class="mt">${c.start?hm(a)+"–"+hm(b):""}</span><span class="mn">${esc(c.title)}</span>${c.url?`<span class="lico">${ICONS[svcOf(c.url)]||""}</span>`:""}</span>${(c.outcomes||[]).length?`<ul>${c.outcomes.map(o=>`<li>${esc(o)}</li>`).join("")}</ul>`:""}</${tag}>`}).join("");
+    const body=(sum.length?`<div class="fsum"><ul>${sum.map(b=>`<li>${esc(b)}</li>`).join("")}</ul></div>`:"")
+      +(calls.length?`<div class="fsub">Calls</div>${callHtml}`:"")
+      +(done.length?`<div class="fsub">Closed</div><ul class="rows secbody">${done.map(taskRow).join("")}</ul>`:"")
+      +(!sum.length&&!calls.length&&!done.length?`<p class="fempty">Nothing recorded for this day.</p>`:"");
+    return `<details class="sec fday" data-k="${k}" ${prev[k]===false?"":"open"}><summary>${esc(head)}${meta}</summary>${body}</details>`}).join("");
 }
 async function onCheck(e){
   const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
@@ -561,7 +606,7 @@ function openMenu(id,x,y){
 }
 document.addEventListener("pointerdown",e=>{if(menuEl&&!menuEl.contains(e.target))closeMenu()});
 addEventListener("scroll",closeMenu,true);addEventListener("resize",closeMenu);
-for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups")]){
+for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups"),$("feedDays")]){
   L.addEventListener("contextmenu",e=>{const li=e.target.closest("li.task");if(!li||e.target.closest("a"))return;e.preventDefault();
     let x=e.clientX,y=e.clientY;if(!x&&!y){const r=li.getBoundingClientRect();x=r.left+40;y=r.bottom}openMenu(li.dataset.id,x,y)});
   let lp=null;
@@ -571,7 +616,7 @@ for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups")])
   L.addEventListener("pointermove",e=>{if(lp&&Math.hypot(e.clientX-lp.x0,e.clientY-lp.y0)>8){clearTimeout(lp.timer);lp=null}});
   for(const ev of ["pointerup","pointercancel"])L.addEventListener(ev,()=>{if(lp){clearTimeout(lp.timer);lp=null}});
 }
-$("open").addEventListener("change",onCheck);$("nowList").addEventListener("change",onCheck);$("groups").addEventListener("change",onCheck);$("doneList").addEventListener("change",onCheck);$("archList").addEventListener("change",onCheck);
+$("open").addEventListener("change",onCheck);$("nowList").addEventListener("change",onCheck);$("groups").addEventListener("change",onCheck);$("doneList").addEventListener("change",onCheck);$("archList").addEventListener("change",onCheck);$("feedDays").addEventListener("change",onCheck);$("feedDays").addEventListener("click",toggleTask);
 $("newtask").addEventListener("input",e=>{$("addbtn").disabled=!e.target.value.trim()||!db});
 $("addform").addEventListener("submit",async e=>{
   e.preventDefault();const v=$("newtask").value.trim();if(!v||!db)return;
@@ -588,6 +633,7 @@ $("addform").addEventListener("submit",async e=>{
   db.collection("projects").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);projects=s.docs.map(d=>({id:d.id,...d.data()}));renderProjects()},()=>clearTimeout(timer));
   db.collection("tasks").onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks()},()=>{});
   db.doc("meta/meetings").onSnapshot(s=>{meetings=s.exists?(s.data().items||[]):[];renderTasks()},()=>{});
+  db.collection("feed").onSnapshot(s=>{feed=s.docs.map(d=>({id:d.id,...d.data()}));renderFeed()},()=>{});
   setInterval(()=>renderTasks(),60000);
   db.doc("meta/summary").onSnapshot(s=>{
     if(!s.exists)return;const m=s.data();
