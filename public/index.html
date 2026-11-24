@@ -481,7 +481,7 @@ async function saveOrder(li){
 (()=>{const L=$("open");let st=null;
   L.addEventListener("touchmove",e=>{if(st&&st.armed)e.preventDefault()},{passive:false});
   L.addEventListener("pointerdown",e=>{
-    if(!db||e.button!==0)return;const h=e.target.closest(".thead");if(!h)return;const li=h.closest("li.task");if(!li||!li.closest("ul.tlist")||li.classList.contains("done"))return;
+    if(!db||e.button!==0)return;const h=e.target.closest(".thead");if(!h)return;const li=h.closest("li.task");if(!li||!li.closest("ul.tlist"))return;
     const touch=e.pointerType!=="mouse";if(!touch)e.preventDefault();
     st={li,id:e.pointerId,x0:e.clientX,y0:e.clientY,startY:e.clientY,armed:false,moved:false,touch};
     if(touch)st.timer=setTimeout(()=>{if(st&&!st.armed){navigator.vibrate?.(10);arm()}},420);
