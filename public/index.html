@@ -290,6 +290,15 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .fblock .task:hover,.fblock .task.open{background:var(--pill)}
 .fempty{font-size:15px;color:var(--faint);padding:10px 0}
 @media (max-width:520px){.fbody{padding-left:8px}.fch .mt{min-width:0}}
+/* v32: Tasks — each section on a filled frame like Feed days */
+#open>details.sec+details.sec,#doneSec,#archSec{margin-top:22px}
+.tframe,#doneSec>.rows,#archSec>.rows{margin:12px -10px 0;padding:6px 8px;background:var(--raised);border-radius:10px}
+.tframe .tlist,.tframe .mcards{margin:0}
+.tframe .mcards{margin-bottom:2px}
+.tframe .mcard{margin:0;padding:9px 10px;background:var(--pill)}
+.tframe .task,#doneSec .task,#archSec .task{background:none;margin:0}
+.tframe .task:hover,.tframe .task.open,#doneSec .task:hover,#doneSec .task.open,#archSec .task:hover,#archSec .task.open{background:var(--pill)}
+.tframe .task.dragging{background:var(--pill)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -552,7 +561,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
     return `<div class="mcards">${ms.map(m=>{const a=new Date(m.start),b=new Date(m.end||m.start),live=a<=nowT&&b>nowT,past=b<=nowT;
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const tag=m.url?"a":"div",href=m.url?` href="${esc(m.url)}" target="_blank" rel="noopener"`:"";
       return `<${tag} class="mcard${live?" now":""}${past?" past":""}"${href}><span class="mt">${day}${live?"Now · until "+hm(b):hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}</summary>${meetHtml(k)}<ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></details>`).join("");
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
