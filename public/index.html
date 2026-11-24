@@ -600,6 +600,7 @@ let menuEl=null;
 function closeMenu(){if(menuEl){menuEl.remove();menuEl=null}}
 function openMenu(id,x,y){
   closeMenu();const t=tasks.find(z=>z.id===id);if(!t||!db)return;const cur=st(t);
+  menuAt={x:scrollX,y:scrollY,w:innerWidth,h:innerHeight};
   menuEl=document.createElement("div");menuEl.className="menu";menuEl.setAttribute("role","menu");
   menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Not my task</span><span></span></button>`;
   document.body.appendChild(menuEl);
@@ -615,7 +616,12 @@ function openMenu(id,x,y){
     else if(e.key==="Escape"){closeMenu();document.querySelector(`li[data-id="${CSS.escape(id)}"] .thead`)?.focus()}});
 }
 document.addEventListener("pointerdown",e=>{if(menuEl&&!menuEl.contains(e.target))closeMenu()});
-addEventListener("scroll",closeMenu,true);addEventListener("resize",closeMenu);
+// Закрывать меню только при реальной прокрутке (>8px) или реальной смене размера окна: правый клик на трекпаде даёт микро-прокрутку.
+let menuAt=null;
+addEventListener("scroll",e=>{if(!menuEl||menuEl.contains(e.target))return;
+  if(e.target!==document&&e.target!==document.documentElement&&e.target!==document.body){closeMenu();return}
+  if(menuAt&&Math.abs(scrollY-menuAt.y)<=8&&Math.abs(scrollX-menuAt.x)<=8)return;closeMenu()},true);
+addEventListener("resize",()=>{if(menuEl&&menuAt&&(innerWidth!==menuAt.w||innerHeight!==menuAt.h))closeMenu()});
 for(const L of [$("open"),$("doneList"),$("archList"),$("nowList"),$("groups"),$("feedDays")]){
   L.addEventListener("contextmenu",e=>{const li=e.target.closest("li.task");if(!li||e.target.closest("a"))return;e.preventDefault();
     let x=e.clientX,y=e.clientY;if(!x&&!y){const r=li.getBoundingClientRect();x=r.left+40;y=r.bottom}openMenu(li.dataset.id,x,y)});
