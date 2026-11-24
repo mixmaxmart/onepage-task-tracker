@@ -1,7 +1,7 @@
 {
-  "name": "OnePage дизайн-радар",
-  "short_name": "Дизайн-радар",
-  "lang": "ru",
+  "name": "OnePage Design Radar",
+  "short_name": "Design Radar",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

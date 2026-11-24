@@ -122,10 +122,10 @@
       box.innerHTML = `
         <form>
           <img src="/icon-180.png" alt="" width="56" height="56">
-          <h1>Дизайн-радар</h1>
-          <input type="email" name="email" placeholder="Почта" autocomplete="username" required>
-          <input type="password" name="password" placeholder="Пароль" autocomplete="current-password" required>
-          <button type="submit">Войти</button>
+          <h1>Design Radar</h1>
+          <input type="email" name="email" placeholder="Email" autocomplete="username" required>
+          <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+          <button type="submit">Sign in</button>
           <p class="err" hidden></p>
         </form>`;
       const st = document.createElement("style");
@@ -142,7 +142,7 @@
         ev.preventDefault();
         e.hidden = true;
         const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
-        if (error) { e.textContent = "Не получилось войти. Проверь почту и пароль."; e.hidden = false; return; }
+        if (error) { e.textContent = "Couldn't sign in. Check your email and password."; e.hidden = false; return; }
         box.remove(); st.remove(); resolve();
       });
     });

@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="ru" class="booting">
+<html lang="en" class="booting">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="/manifest.webmanifest">
-<title>OnePage дизайн-радар</title>
+<title>OnePage Design Radar</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Дизайн-радар">
+<meta name="apple-mobile-web-app-title" content="Design Radar">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#191919" media="(prefers-color-scheme: dark)">
@@ -268,42 +268,42 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 
 <div class="wrap">
   <div class="top">
-    <div class="tabs" role="tablist" aria-label="Разделы">
-      <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Дайджест</button>
-      <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Задачи<span class="n" id="tn"></span></button>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Digest</button>
+      <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Tasks<span class="n" id="tn"></span></button>
     </div>
-    <span class="stamp" id="stamp">Загрузка…</span>
+    <span class="stamp" id="stamp">Loading…</span>
   </div>
 
   <section class="panel" id="digest" role="tabpanel" aria-labelledby="tab-digest">
     <details class="sec" open>
-      <summary>Саммари</summary>
-      <div class="secbody digest"><ul id="summary"><li>Сводка появится после первого обновления.</li></ul></div>
+      <summary>Summary</summary>
+      <div class="secbody digest"><ul id="summary"><li>The summary will appear after the first update.</li></ul></div>
     </details>
     <details class="sec" open id="nowSec" hidden>
-      <summary>Ближайшие задачи</summary>
+      <summary>Up next</summary>
       <ul class="rows secbody" id="nowList"></ul>
-      <button type="button" class="more" id="toTasks">Все задачи</button>
+      <button type="button" class="more" id="toTasks">All tasks</button>
     </details>
-    <div id="groups"><p class="empty">Здесь появятся активные проекты.</p></div>
+    <div id="groups"><p class="empty">Active projects will appear here.</p></div>
     <p class="note" id="sources"></p>
   </section>
 
   <section class="panel" id="tasks" role="tabpanel" aria-labelledby="tab-tasks" hidden>
     <form class="composer" id="addform">
-      <input id="newtask" type="text" placeholder="Добавить задачу…" aria-label="Новая задача" autocomplete="off">
-      <button class="send" type="submit" id="addbtn" disabled aria-label="Добавить"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <input id="newtask" type="text" placeholder="Add a task…" aria-label="New task" autocomplete="off">
+      <button class="send" type="submit" id="addbtn" disabled aria-label="Add"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
-    <div id="open"><p class="empty">Загрузка…</p></div>
+    <div id="open"><p class="empty">Loading…</p></div>
     <details class="sec" id="doneSec" hidden>
-      <summary><span id="doneLabel">Закрытые</span></summary>
+      <summary><span id="doneLabel">Closed</span></summary>
       <ul class="rows secbody" id="doneList"></ul>
     </details>
     <details class="sec" id="archSec" hidden>
-      <summary><span id="archLabel">Архив</span></summary>
+      <summary><span id="archLabel">Archive</span></summary>
       <ul class="rows secbody" id="archList"></ul>
     </details>
-    <p class="note" id="tnote">Задачу можно перетащить мышью, а на телефоне удержать и вести. Правый клик или удержание без движения открывает меню статуса.</p>
+    <p class="note" id="tnote">Drag a task with the mouse, or press and hold on a phone. Right-click or a long press opens the status menu.</p>
   </section>
 </div>
 
@@ -311,8 +311,8 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 <script src="/vendor/supabase-2.118.0.js"></script>
 <script src="/db.js"></script>
 <script>
-const GROUPS=[["blocked","Блокеры"],["waiting","Ждут дизайна"],["active","В работе"],["done","Закрыто"]];
-const STATE={blocked:"блокер",waiting:"ждёт дизайна",active:"в работе",done:"закрыто"};
+const GROUPS=[["blocked","Blocked"],["waiting","Waiting for design"],["active","In progress"],["done","Done"]];
+const STATE={blocked:"blocked",waiting:"waiting for design",active:"in progress",done:"done"};
 let projects=[],tasks=[],meetings=[],db=null;const openRows=new Set();
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -320,11 +320,11 @@ const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${Str
 const today=iso(new Date()),tomorrow=iso(new Date(Date.now()+864e5));
 // «Эта неделя»: дни после завтра до воскресенья. В выходные это уже следующая неделя.
 const addD=(k,n)=>{const d=new Date(k+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)};
-const _dow=(new Date().getDay()+6)%7;let weekEnd=addD(today,6-_dow),weekLabel="Эта неделя";
-if(weekEnd<=tomorrow){weekEnd=addD(weekEnd,7);weekLabel="Следующая неделя"}
+const _dow=(new Date().getDay()+6)%7;let weekEnd=addD(today,6-_dow),weekLabel="This week";
+if(weekEnd<=tomorrow){weekEnd=addD(weekEnd,7);weekLabel="Next week"}
 const _fri=addD(weekEnd,-2),weekTarget=_fri>tomorrow?_fri:weekEnd;
 const inWeek=k=>!!k&&k>tomorrow&&k<=weekEnd;
-const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"short"})}catch{return d}};
+const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("en-US",{day:"numeric",month:"short"})}catch{return d}};
 const chev=``;
 
 function setTab(name){
@@ -362,8 +362,8 @@ function refsHtml(p){const r=p.refs||{};const ks=[["slack","Slack"],["linear","L
 const initials=n=>String(n||"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
 function teamHtml(p){
   const ms=p.members&&p.members.length?p.members:null;
-  if(!ms){return p.team&&p.team.length?`<div><h4>Команда</h4><dl class="team">${p.team.map(t=>`<dt>${esc(t.role)}</dt><dd>${esc(t.who)}</dd>`).join("")}</dl></div>`:""}
-  return `<div><h4>Команда</h4><div class="chips">${ms.map(m=>{const tip=[m.role,m.does].filter(Boolean).join(" · ");
+  if(!ms){return p.team&&p.team.length?`<div><h4>Team</h4><dl class="team">${p.team.map(t=>`<dt>${esc(t.role)}</dt><dd>${esc(t.who)}</dd>`).join("")}</dl></div>`:""}
+  return `<div><h4>Team</h4><div class="chips">${ms.map(m=>{const tip=[m.role,m.does].filter(Boolean).join(" · ");
     return `<button type="button" class="chip person" data-tip="${esc(tip)}" aria-label="${esc(m.name)}: ${esc(tip)}"><span class="av">${m.avatar?`<img src="${esc(m.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}<i>${esc(initials(m.name))}</i></span>${esc(m.name)}</button>`}).join("")}</div></div>`}
 function projRow(p){
   const open=openRows.has(p.id);
@@ -376,10 +376,10 @@ function projRow(p){
     ${open?`<div class="detail">
       ${refsHtml(p)}
       ${teamHtml(p)}
-      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Задачи</h4><ul class="rows ptasks">${ts.map(taskRow).join("")}</ul></div>`:""})()}
-      ${p.design&&p.design.length?`<div><h4>От дизайна</h4>${ul(p.design)}</div>`:""}
-      ${p.now&&p.now.length?`<div><h4>Что происходит</h4>${ul(p.now)}</div>`:""}
-      ${(p.links||[]).length?`<div><h4>Материалы</h4><div class="chips">${p.links.map(linkChip).join("")}</div></div>`:""}
+      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Tasks</h4><ul class="rows ptasks">${ts.map(taskRow).join("")}</ul></div>`:""})()}
+      ${p.design&&p.design.length?`<div><h4>From design</h4>${ul(p.design)}</div>`:""}
+      ${p.now&&p.now.length?`<div><h4>What's happening</h4>${ul(p.now)}</div>`:""}
+      ${(p.links||[]).length?`<div><h4>Links</h4><div class="chips">${p.links.map(linkChip).join("")}</div></div>`:""}
     </div>`:""}
   </li>`;
 }
@@ -398,24 +398,24 @@ document.addEventListener("click",e=>{const c=e.target.closest(".chip.person");d
 $("groups").addEventListener("click",e=>{const b=e.target.closest("button.head");if(!b)return;const id=b.dataset.id;openRows.has(id)?openRows.delete(id):openRows.add(id);renderProjects()});
 
 const openTasks=new Set();let dragging=false;
-const ST=[["todo","К выполнению"],["progress","В работе"],["done","Готово"],["canceled","Отменено"]];
+const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled","Canceled"]];
 const st=t=>t.status||(t.done?"done":"todo");
 const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
 function taskRow(t){
   const s=st(t),closed=!isOpenSt(t);
   const late=t.due&&!closed&&t.due<today;
   const isOpen=openTasks.has(t.id);
-  const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Источник",url:t.url}]:[])];
+  const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Source",url:t.url}]:[])];
   const sub=[t.project&&esc(t.project),t.source&&esc(t.source)].filter(Boolean).join(" · ");
   return `<li class="task ${closed?"done":""} ${s==="progress"?"prog":""} ${s==="canceled"?"canceled":""} ${isOpen?"open":""}" data-id="${esc(t.id)}">
-    ${closed?"":`<button class="grip" type="button" aria-label="Перетащить: ${esc(t.title)}" title="Перетащить"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
-    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Выполнено: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
+    ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
+    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
-      <span class="title">${esc(t.title)}</span><span class="right ${late?"late":""}">${t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("ru-RU",{weekday:"short"})):""}</span>
+      <span class="title">${esc(t.title)}</span><span class="right ${late?"late":""}">${t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):""}</span>
       ${sub?`<span class="sub">${sub}</span>`:""}
     </button>
     ${isOpen?`<div class="tdetail">
-      <p>${t.description?esc(t.description):`<span class="s" style="color:var(--faint)">Контекста пока нет.</span>`}</p>
+      <p>${t.description?esc(t.description):`<span class="s" style="color:var(--faint)">No context yet.</span>`}</p>
       ${links.length?`<div class="chips">${links.map(linkChip).join("")}</div>`:""}
     </div>`:""}
   </li>`;
@@ -433,7 +433,7 @@ async function saveOrder(li){
   const t=tasks.find(x=>x.id===li.dataset.id);if(!t||!db)return;t.order=o;
   let due=li.parentNode.dataset.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;if(due==="late"){const dw=new Date().getDay(),pd=addD(today,-(dw===1?3:dw===0?2:1));due=t.due&&t.due<pd?t.due:addD(pd,-1)}const patch={order:o};
   if((t.due||null)!==due){patch.due=due;t.due=due}
-  try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Порядок не сохранился. Попробуйте ещё раз."}
+  try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Order wasn't saved. Try again."}
 }
 // v19: тянем саму строку. Мышь: зажать и сдвинуть на 5px. Палец: удержать ~0.4 с и вести; отпустил без движения — меню статуса.
 (()=>{const L=$("open");let st=null;
@@ -493,9 +493,9 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const byDone=(a,b)=>(b.doneAt||"")>(a.doneAt||"")?1:-1;
   const done=vis.filter(t=>!keepInList(t)&&st(t)!=="canceled").sort(byDone);
   const arch=vis.filter(t=>st(t)==="canceled").sort(byDone);
-  $("archLabel").textContent=`Архив · ${arch.length}`;$("archList").innerHTML=arch.map(taskRow).join("");$("archSec").hidden=!arch.length;
+  $("archLabel").textContent=`Archive · ${arch.length}`;$("archList").innerHTML=arch.map(taskRow).join("");$("archSec").hidden=!arch.length;
   $("tn").textContent=open.filter(isOpenSt).length||"";
-  $("doneLabel").textContent=`Закрытые · ${done.length}`;
+  $("doneLabel").textContent=`Closed · ${done.length}`;
   const prev={};$("open").querySelectorAll("details").forEach(d=>prev[d.dataset.k]=d.open);
   // Предыдущий рабочий день (в понедельник и выходные — пятница): открытые задачи на этот день + закрытые в этот день, одна секция.
   // Всё, что просрочено раньше, — одна секция «Просрочено» над ней.
@@ -509,17 +509,17 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   if(prevClosed.length)keys.add(pd);
   const sk=k=>k==="week"?weekEnd+"~":k==="late"?"0":k;
   const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):k==="late"?open.filter(t=>isLate(t.due)).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)):k===pd?[...prevClosed,...open.filter(t=>t.due===k)]:open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);
-  const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("ru-RU",{weekday:"long"})+", "+d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})};
+  const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"long"})+", "+d.toLocaleDateString("en-US",{day:"numeric",month:"long"})};
   const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
-  const label=k=>!k?"Остальное":k==="week"?weekLabel:k==="late"?`<span class="late">Просрочено</span>`:k===today?"Сегодня, "+esc(wd(k)):k===tomorrow?"Завтра, "+esc(wd(k)):k===pd?(k===yest?"Вчера, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
-  const cnt=(k,ts)=>{const o=ts.filter(isOpenSt).length;if(k!==pd)return o?` · ${o}`:"";const c=ts.filter(t=>st(t)==="done").length;return [o?(`<span class="late">не сделано ${o}</span>`):"",c?`закрыто ${c}`:""].filter(Boolean).map(x=>" · "+x).join("")};
-  const nowT=Date.now(),hm=d=>d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  const label=k=>!k?"No date":k==="week"?weekLabel:k==="late"?`<span class="late">Overdue</span>`:k===today?"Today, "+esc(wd(k)):k===tomorrow?"Tomorrow, "+esc(wd(k)):k===pd?(k===yest?"Yesterday, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
+  const cnt=(k,ts)=>{const o=ts.filter(isOpenSt).length;if(k!==pd)return o?` · ${o}`:"";const c=ts.filter(t=>st(t)==="done").length;return [o?(`<span class="late">${o} not done</span>`):"",c?`${c} closed`:""].filter(Boolean).map(x=>" · "+x).join("")};
+  const nowT=Date.now(),hm=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   const meetHtml=k=>{if(!k||k==="late")return "";
     const ms=meetings.filter(m=>k==="week"?inWeek(mDay(m)):mDay(m)===k).sort((a,b)=>new Date(a.start)-new Date(b.start));if(!ms.length)return "";
     return `<div class="mcards">${ms.map(m=>{const a=new Date(m.start),b=new Date(m.end||m.start),live=a<=nowT&&b>nowT,past=b<=nowT;
-      const day=k==="week"?a.toLocaleDateString("ru-RU",{weekday:"short"})+" ":"";const tag=m.url?"a":"div",href=m.url?` href="${esc(m.url)}" target="_blank" rel="noopener"`:"";
-      return `<${tag} class="mcard${live?" now":""}${past?" past":""}"${href}><span class="mt">${day}${live?"Идёт · до "+hm(b):hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">не ответил</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}</summary>${meetHtml(k)}<ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Перетащи сюда, чтобы запланировать на неделю":k==="late"?"Просроченных нет":k?"Перетащи сюда, чтобы назначить на этот день":"Без даты"}</li></ul></details>`).join("");
+      const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const tag=m.url?"a":"div",href=m.url?` href="${esc(m.url)}" target="_blank" rel="noopener"`:"";
+      return `<${tag} class="mcard${live?" now":""}${past?" past":""}"${href}><span class="mt">${day}${live?"Now · until "+hm(b):hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}</${tag}>`}).join("")}</div>`};
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}</summary>${meetHtml(k)}<ul class="rows secbody tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
@@ -527,13 +527,13 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
    const near=act.filter(t=>t.due&&t.due<=tomorrow).sort((a,b)=>(a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)));
    const pick=near.length?near:act.slice(0,6);
    $("nowList").innerHTML=pick.map(taskRow).join("");$("nowSec").hidden=!pick.length;
-   $("toTasks").textContent=open.filter(isOpenSt).length>pick.length?`Все задачи · ${open.filter(isOpenSt).length}`:"Все задачи";}
+   $("toTasks").textContent=open.filter(isOpenSt).length>pick.length?`All tasks · ${open.filter(isOpenSt).length}`:"All tasks";}
   $("doneSec").hidden=!done.length;
 }
 async function onCheck(e){
   const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
   try{await setStatus(cb.dataset.id,done?"done":"todo")}
-  catch{cb.checked=!done;$("tnote").textContent="Не удалось сохранить отметку. Обновите страницу и попробуйте ещё раз."}
+  catch{cb.checked=!done;$("tnote").textContent="Couldn't save. Reload the page and try again."}
 }
 async function setStatus(id,s){
   const closed=s==="done"||s==="canceled";
@@ -545,14 +545,14 @@ function closeMenu(){if(menuEl){menuEl.remove();menuEl=null}}
 function openMenu(id,x,y){
   closeMenu();const t=tasks.find(z=>z.id===id);if(!t||!db)return;const cur=st(t);
   menuEl=document.createElement("div");menuEl.className="menu";menuEl.setAttribute("role","menu");
-  menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Убрать задачу</span><span></span></button>`;
+  menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Not my task</span><span></span></button>`;
   document.body.appendChild(menuEl);
   const r=menuEl.getBoundingClientRect();
   menuEl.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";
   menuEl.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+"px";
   menuEl.querySelector("button").focus();
   menuEl.addEventListener("click",async e=>{const b=e.target.closest("button[data-s]");if(!b)return;closeMenu();
-    try{await setStatus(id,b.dataset.s)}catch{$("tnote").textContent="Статус не сохранился. Попробуйте ещё раз."}});
+    try{await setStatus(id,b.dataset.s)}catch{$("tnote").textContent="Status wasn't saved. Try again."}});
   menuEl.addEventListener("keydown",e=>{const bs=[...menuEl.querySelectorAll("button")],i=bs.indexOf(document.activeElement);
     if(e.key==="ArrowDown"){e.preventDefault();bs[(i+1)%bs.length].focus()}
     else if(e.key==="ArrowUp"){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus()}
@@ -576,23 +576,23 @@ $("addform").addEventListener("submit",async e=>{
   e.preventDefault();const v=$("newtask").value.trim();if(!v||!db)return;
   $("newtask").value="";$("addbtn").disabled=true;
   const top=Math.min(0,...tasks.filter(isOpenSt).map(t=>t.order??500))-1;
-  try{await db.collection("tasks").add({title:v,done:false,status:"todo",addedBy:"max",source:"добавлено вручную",createdAt:new Date().toISOString(),order:top})}
-  catch{$("newtask").value=v;$("tnote").textContent="Задача не сохранилась. Попробуйте ещё раз."}
+  try{await db.collection("tasks").add({title:v,done:false,status:"todo",addedBy:"max",source:"added manually",createdAt:new Date().toISOString(),order:top})}
+  catch{$("newtask").value=v;$("tnote").textContent="Task wasn't saved. Try again."}
 });
 
 (async()=>{
   db=window.radarDB?await window.radarDB():null;
-  if(!db){window.radarReady&&window.radarReady();document.documentElement.classList.remove("booting");$("stamp").textContent="Нет связи с базой";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Задачи не загрузились. Проверь интернет и обнови страницу.</li>`;return}
-  const timer=setTimeout(()=>{$("stamp").textContent="Данные пока не загрузились"},10000);
+  if(!db){window.radarReady&&window.radarReady();document.documentElement.classList.remove("booting");$("stamp").textContent="No connection to the database";$("addform").hidden=true;$("open").innerHTML=`<li class="empty">Tasks didn't load. Check your connection and reload.</li>`;return}
+  const timer=setTimeout(()=>{$("stamp").textContent="Data hasn't loaded yet"},10000);
   db.collection("projects").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);projects=s.docs.map(d=>({id:d.id,...d.data()}));renderProjects()},()=>clearTimeout(timer));
   db.collection("tasks").onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks()},()=>{});
   db.doc("meta/meetings").onSnapshot(s=>{meetings=s.exists?(s.data().items||[]):[];renderTasks()},()=>{});
   setInterval(()=>renderTasks(),60000);
   db.doc("meta/summary").onSnapshot(s=>{
     if(!s.exists)return;const m=s.data();
-    $("stamp").textContent=`Обновлено ${fd(m.date)}${m.time?", "+m.time:""}`;
+    $("stamp").textContent=`Updated ${fd(m.date)}${m.time?", "+m.time:""}`;
     $("summary").innerHTML=(m.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("");
-    $("sources").textContent=m.sources?`Источники: ${m.sources}`:"";
+    $("sources").textContent=m.sources?`Sources: ${m.sources}`:"";
   },()=>{});
   window.radarReady();
 })();
