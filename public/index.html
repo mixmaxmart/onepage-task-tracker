@@ -309,6 +309,9 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
+/* v38: iPhone home-screen app — keep content below the status bar */
+body{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:100;pointer-events:none}
 .mcard .mg{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex:none;position:relative}
 .mcard .mg img{width:14px;height:14px;border-radius:3px}
 .mcard.past.notes{opacity:.7}
