@@ -309,6 +309,31 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
+/* v40: Backlog */
+.bframe{margin-top:16px;display:flex;flex-direction:column;gap:2px}
+.bframe .fcall{margin:0}
+.ich .mn{display:flex;flex-direction:column;gap:2px}
+.isub{font-size:13px;color:var(--muted)}
+.ibody{padding:2px 8px 14px;display:flex;flex-direction:column;gap:12px}
+.gal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -8px;padding:0 8px;scrollbar-width:none;overscroll-behavior-x:contain}
+.gal::-webkit-scrollbar{display:none}
+.gi{flex:none;height:260px;max-width:85%;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--raised);scroll-snap-align:start;scroll-margin-left:8px;cursor:zoom-in}
+.gi img{display:block;width:100%;height:100%;object-fit:cover}
+@media (max-width:520px){.gi{height:220px}}
+.idesc{font:inherit;font-size:15px;line-height:1.5;color:var(--fg);background:none;border:0;padding:0;resize:none;width:100%;overflow:hidden}
+.idesc:focus{outline:none}
+.idesc::placeholder{color:var(--faint)}
+.itools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.itools select,.itools input,.ibtn{font:inherit;font-size:13px;height:32px;border:0;border-radius:8px;background:var(--chip);color:var(--muted);padding:0 10px}
+.itools input{flex:1;min-width:140px;color:var(--fg)}
+.itools input::placeholder{color:var(--faint)}
+.ibtn{cursor:pointer}.ibtn:hover,.itools select:hover{background:var(--chip-h);color:var(--fg)}
+.iarch{margin-left:auto}
+.viewer{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.9);outline:none}
+.vstrip{display:flex;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.vstrip::-webkit-scrollbar{display:none}
+.vcell{flex:none;width:100%;height:100%;display:grid;place-items:center;scroll-snap-align:center;padding:24px}
+.vcell img{max-width:100%;max-height:100%;border-radius:8px}
 /* v38: iPhone home-screen app — keep content below the status bar */
 body{padding-top:calc(20px + env(safe-area-inset-top,0px))}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:100;pointer-events:none}
@@ -340,6 +365,7 @@ a.mcard.past.notes:hover{opacity:1}
       <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Digest</button>
       <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Tasks<span class="n" id="tn"></span></button>
       <button class="tab" role="tab" id="tab-feed" aria-controls="feed" aria-selected="false" data-tab="feed">Feed</button>
+      <button class="tab" role="tab" id="tab-backlog" aria-controls="backlog" aria-selected="false" data-tab="backlog">Backlog</button>
     </div>
     <span class="stamp" id="stamp">Loading…</span>
   </div>
@@ -378,6 +404,16 @@ a.mcard.past.notes:hover{opacity:1}
   <section class="panel" id="feed" role="tabpanel" aria-labelledby="tab-feed" hidden>
     <div id="feedDays"><p class="empty">The feed fills in after each update: a summary of the day, calls with their outcomes and closed tasks.</p></div>
   </section>
+
+  <section class="panel" id="backlog" role="tabpanel" aria-labelledby="tab-backlog" hidden>
+    <form class="composer" id="ideaform">
+      <input id="newidea" type="text" placeholder="Add an idea or paste a link…" aria-label="New idea" autocomplete="off">
+      <button class="send" type="submit" id="ideabtn" disabled aria-label="Add"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </form>
+    <div id="ideas"></div>
+    <p class="note" id="bnote">Open an idea to add a description, links or images. Paste a screenshot into an open idea to attach it.</p>
+    <input type="file" id="ideafile" accept="image/*" multiple hidden>
+  </section>
 </div>
 
 <script src="/config.js"></script>
@@ -401,9 +437,9 @@ const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("en-US",{day:
 const chev=``;
 
 function setTab(name){
-  if(name!=="tasks"&&name!=="feed")name="digest";
+  if(!["tasks","feed","backlog"].includes(name))name="digest";
   for(const b of document.querySelectorAll(".tab"))b.setAttribute("aria-selected",b.dataset.tab===name);
-  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";$("feed").hidden=name!=="feed";
+  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";$("feed").hidden=name!=="feed";$("backlog").hidden=name!=="backlog";
 }
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;setTab(b.dataset.tab);history.replaceState(null,"","#"+b.dataset.tab)});
 window.addEventListener("hashchange",()=>setTab(location.hash.slice(1)));
@@ -612,6 +648,89 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   $("doneSec").hidden=!done.length;
   renderFeed();
 }
+// ---------- Backlog: идеи (backlog/<id>) ----------
+// {title, description, projectId, project, links[{label,url}], images[{path,w,h}|{url}], order, createdAt, archived}
+let ideas=[];const openIdeas=new Set();const signed=new Map();let signing=false;
+const imgSrc=im=>im.url||signed.get(im.path)?.url||"";
+async function signMissing(){
+  const sb=window.radarSB;if(!sb||signing)return;
+  const now=Date.now(),need=[...new Set(ideas.flatMap(i=>(i.images||[]).filter(im=>im.path&&!(signed.get(im.path)?.exp>now+6e5)).map(im=>im.path)))];
+  if(!need.length)return;signing=true;
+  try{const {data}=await sb.storage.from("backlog").createSignedUrls(need,7200);for(const r of data||[])if(r.signedUrl)signed.set(r.path,{url:r.signedUrl,exp:now+7.1e6})}catch{}
+  signing=false;renderBacklog(true);
+}
+function renderBacklog(noSign){
+  const L=$("ideas");if(!L)return;
+  const list=ideas.filter(i=>!i.archived).sort((a,b)=>(a.order??0)-(b.order??0)||((b.createdAt||"")>(a.createdAt||"")?1:-1));
+  if(!list.length){L.innerHTML=`<p class="empty">No ideas yet. Add one above.</p>`;return}
+  const projOpts=sel=>`<option value="">No project</option>`+projects.slice().sort((a,b)=>(a.order??99)-(b.order??99)).map(p=>`<option value="${esc(p.id)}"${p.id===sel?" selected":""}>${esc(p.name)}</option>`).join("");
+  L.innerHTML=`<div class="tframe bframe">`+list.map(i=>{const op=openIdeas.has(i.id),ims=i.images||[],proj=projects.find(p=>p.id===i.projectId);
+    const pname=proj?proj.name:i.project||"";
+    const meta=[pname&&esc(pname),ims.length?`${ims.length} image${ims.length>1?"s":""}`:""].filter(Boolean).join(" · ");
+    return `<div class="fcall idea${op?" open":""}" data-id="${esc(i.id)}"><button type="button" class="fch ich" data-idea="${esc(i.id)}" aria-expanded="${op}"><span class="mn">${esc(i.title||"Untitled")}${meta?`<span class="isub">${meta}</span>`:""}</span><svg class="chev"><use href="#chev"/></svg></button>${op?`<div class="ibody">
+      ${(i.links||[]).length?`<div class="chips">${i.links.map(linkChip).join("")}</div>`:""}
+      ${ims.length?`<div class="gal" role="list">${ims.map((im,n)=>{const src=imgSrc(im);const r=im.w&&im.h?im.w/im.h:4/3;return `<button type="button" class="gi" role="listitem" data-idea="${esc(i.id)}" data-n="${n}" style="aspect-ratio:${r.toFixed(3)}" aria-label="Open image ${n+1}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:""}</button>`}).join("")}</div>`:""}
+      <textarea class="idesc" data-idea="${esc(i.id)}" rows="2" placeholder="Description, research notes…">${esc(i.description||"")}</textarea>
+      <div class="itools">
+        <select class="iproj" data-idea="${esc(i.id)}" aria-label="Project">${projOpts(i.projectId)}</select>
+        <input class="ilink" data-idea="${esc(i.id)}" type="url" placeholder="Paste a link…" aria-label="Add link">
+        <button type="button" class="ibtn iimg" data-idea="${esc(i.id)}">Add images</button>
+        <button type="button" class="ibtn iarch" data-idea="${esc(i.id)}">Archive</button>
+      </div></div>`:""}</div>`}).join("")+`</div>`;
+  L.querySelectorAll(".idesc").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+2+"px"});
+  if(!noSign)signMissing();
+}
+const isUrl=v=>/^https?:\/\/\S+$/i.test(v);
+const linkLabel=u=>{try{const h=new URL(u).hostname.replace(/^www\./,"");return h}catch{return "Link"}};
+$("newidea").addEventListener("input",e=>{$("ideabtn").disabled=!e.target.value.trim()||!db});
+$("ideaform").addEventListener("submit",async e=>{
+  e.preventDefault();const v=$("newidea").value.trim();if(!v||!db)return;$("newidea").value="";$("ideabtn").disabled=true;
+  const top=Math.min(0,...ideas.map(i=>i.order??0))-1;
+  const data=isUrl(v)?{title:linkLabel(v),links:[{label:linkLabel(v),url:v}]}:{title:v,links:[]};
+  try{const r=await db.collection("backlog").add({...data,description:"",images:[],addedBy:"max",createdAt:new Date().toISOString(),order:top});openIdeas.add(r.id);renderBacklog()}
+  catch{$("newidea").value=v;$("bnote").textContent="Idea wasn't saved. Try again."}
+});
+const upIdea=(id,patch)=>db&&db.collection("backlog").doc(id).update(patch).catch(()=>{$("bnote").textContent="Not saved. Try again."});
+let fileFor=null;
+async function addImages(id,files){
+  const sb=window.radarSB,i=ideas.find(x=>x.id===id);if(!sb||!i)return;
+  const imgs=[...files].filter(f=>f.type.startsWith("image/"));if(!imgs.length)return;
+  $("bnote").textContent=`Uploading ${imgs.length} image${imgs.length>1?"s":""}…`;
+  const added=[];
+  for(const f of imgs){
+    const dim=await new Promise(res=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{res({w:im.naturalWidth,h:im.naturalHeight});URL.revokeObjectURL(u)};im.onerror=()=>res({});im.src=u});
+    const ext=(f.type.split("/")[1]||"png").replace("jpeg","jpg"),path=`${id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+    const {error}=await sb.storage.from("backlog").upload(path,f,{contentType:f.type});
+    if(!error)added.push({path,...dim});
+  }
+  const cur=ideas.find(x=>x.id===id)?.images||[];
+  if(added.length)await upIdea(id,{images:[...cur,...added]});
+  $("bnote").textContent=added.length===imgs.length?"Open an idea to add a description, links or images. Paste a screenshot into an open idea to attach it.":"Some images weren't uploaded. Try again.";
+}
+$("ideafile").addEventListener("change",e=>{if(fileFor)addImages(fileFor,e.target.files);e.target.value=""});
+$("ideas").addEventListener("click",e=>{
+  const h=e.target.closest(".ich");if(h){const id=h.dataset.idea;openIdeas.has(id)?openIdeas.delete(id):openIdeas.add(id);renderBacklog();return}
+  const g=e.target.closest(".gi");if(g){openViewer(g.dataset.idea,+g.dataset.n);return}
+  const b=e.target.closest(".iimg");if(b){fileFor=b.dataset.idea;$("ideafile").click();return}
+  const a=e.target.closest(".iarch");if(a){openIdeas.delete(a.dataset.idea);upIdea(a.dataset.idea,{archived:true});return}
+});
+$("ideas").addEventListener("change",e=>{const s=e.target.closest(".iproj");if(!s)return;const p=projects.find(x=>x.id===s.value);upIdea(s.dataset.idea,{projectId:s.value||null,project:p?p.name:null})});
+$("ideas").addEventListener("input",e=>{const t=e.target.closest(".idesc");if(t){t.style.height="auto";t.style.height=t.scrollHeight+2+"px"}});
+$("ideas").addEventListener("focusout",e=>{const t=e.target.closest(".idesc");if(!t)return;const i=ideas.find(x=>x.id===t.dataset.idea);if(i&&(i.description||"")!==t.value)upIdea(i.id,{description:t.value})});
+$("ideas").addEventListener("keydown",e=>{const t=e.target.closest(".ilink");if(!t||e.key!=="Enter")return;e.preventDefault();const v=t.value.trim();if(!isUrl(v))return;
+  const i=ideas.find(x=>x.id===t.dataset.idea);if(!i)return;t.value="";upIdea(i.id,{links:[...(i.links||[]),{label:linkLabel(v),url:v}]})});
+document.addEventListener("paste",e=>{if($("backlog").hidden)return;const files=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith("image/"));if(!files.length)return;
+  const el=document.activeElement?.closest?.(".idea")||(openIdeas.size===1?document.querySelector(".idea.open"):null);if(!el)return;e.preventDefault();addImages(el.dataset.id,files)});
+// Просмотр картинки на весь экран: листается свайпом/стрелками, закрывается кликом или Esc
+function openViewer(id,n){
+  const i=ideas.find(x=>x.id===id);if(!i)return;const ims=(i.images||[]).map(imgSrc).filter(Boolean);if(!ims.length)return;
+  const v=document.createElement("div");v.className="viewer";v.setAttribute("role","dialog");v.setAttribute("aria-label","Images");v.tabIndex=-1;
+  v.innerHTML=`<div class="vstrip">${ims.map(s=>`<div class="vcell"><img src="${esc(s)}" alt=""></div>`).join("")}</div>`;
+  document.body.appendChild(v);const st=v.querySelector(".vstrip");st.scrollLeft=n*st.clientWidth;v.focus();
+  const close=()=>v.remove();
+  v.addEventListener("click",e=>{if(!e.target.closest("img"))close()});
+  v.addEventListener("keydown",e=>{if(e.key==="Escape")close();if(e.key==="ArrowRight")st.scrollBy({left:st.clientWidth,behavior:"smooth"});if(e.key==="ArrowLeft")st.scrollBy({left:-st.clientWidth,behavior:"smooth"})});
+}
 // Лента по дням: feed/<YYYY-MM-DD> = {summary[], calls[{title,start,end,url,outcomes[]}]} + задачи, закрытые в этот день (из tasks).
 function renderFeed(){
   const L=$("feedDays");if(!L)return;
@@ -697,6 +816,8 @@ $("addform").addEventListener("submit",async e=>{
   db.collection("projects").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(timer);projects=s.docs.map(d=>({id:d.id,...d.data()}));renderProjects()},()=>clearTimeout(timer));
   db.collection("tasks").onSnapshot(s=>{tasks=s.docs.map(d=>({id:d.id,...d.data()}));renderTasks()},()=>{});
   db.doc("meta/meetings").onSnapshot(s=>{meetings=s.exists?(s.data().items||[]):[];renderTasks()},()=>{});
+  db.collection("backlog").onSnapshot(s=>{ideas=s.docs.map(d=>({id:d.id,...d.data()}));renderBacklog()},()=>{});
+  $("ideabtn").disabled=!$("newidea").value.trim();
   db.collection("feed").onSnapshot(s=>{feed=s.docs.map(d=>({id:d.id,...d.data()}));renderFeed();renderTasks()},()=>{});
   setInterval(()=>renderTasks(),60000);
   db.doc("meta/summary").onSnapshot(s=>{

@@ -151,6 +151,7 @@
   window.radarDB = async function () {
     if (!window.supabase || !cfg.url || !cfg.key) return null;
     sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true } });
+    window.radarSB = sb; // для Storage (картинки бэклога)
     const { data } = await sb.auth.getSession();
     const cached = data.session ? readCache() : null;
     if (!data.session) { clearCache(); ready(); await loginForm(); }
