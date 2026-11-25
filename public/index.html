@@ -559,14 +559,14 @@ $("open").addEventListener("click",toggleTask);$("nowList").addEventListener("cl
 
 // Drag and drop: перетаскивание за ручку слева, работает мышью и пальцем; клавиатурой — стрелки вверх/вниз на ручке
 async function saveOrder(li){
-  const lis=[...li.parentNode.querySelectorAll("li.task")];const i=lis.indexOf(li);
+  const tk=x=>{const ty=tasks.find(t=>t.id===x.dataset.id)?.type;return TYPES.some(y=>y[0]===ty)?ty:""};
+  let lis=[...li.parentNode.querySelectorAll("li.task")];if(li.parentNode.querySelector("li.tsub"))lis=lis.filter(x=>tk(x)===tk(li));const i=lis.indexOf(li);
   const ord=el=>tasks.find(t=>t.id===el.dataset.id)?.order??500;
   const prev=lis[i-1],next=lis[i+1];
   let o=prev&&next?(ord(prev)+ord(next))/2:prev?ord(prev)+1:next?ord(next)-1:0;
   const t=tasks.find(x=>x.id===li.dataset.id);if(!t||!db)return;t.order=o;
   let due=li.parentNode.dataset.due||null;const toInbox=due==="inbox";if(toInbox)due=t.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;if(due==="late"){const dw=new Date().getDay(),pd=addD(today,-(dw===1?3:dw===0?2:1));due=t.due&&t.due<pd?t.due:addD(pd,-1)}const patch={order:o};
   if((t.due||null)!==due){patch.due=due;t.due=due}
-  {let p=li.previousElementSibling;while(p&&!p.classList.contains("tsub"))p=p.previousElementSibling;if(p){const ty=p.dataset.type||null;if((t.type||null)!==ty&&!(ty===null&&t.type&&!TYPES.some(x=>x[0]===t.type))){patch.type=ty;t.type=ty}}}
   if(toInbox!==!!t.inbox){patch.inbox=toInbox;t.inbox=toInbox}
   try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Order wasn't saved. Try again."}
 }
