@@ -310,6 +310,8 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
 .dl{color:var(--fg);font-weight:600}
+.late .dl{color:inherit}
+.task input:checked{background:var(--faint)!important;border-color:var(--faint)!important}
 .tlist>li.tsub{list-style:none;font-size:14px;color:var(--faint);padding:10px 10px 4px;letter-spacing:.01em}
 .tlist>li.tsub:first-child{padding-top:4px}
 .rows>li.tsub+li.task::before{content:none}
@@ -385,11 +387,11 @@ a.mcard.past.notes:hover{opacity:1}
 
   <section class="panel" id="digest" role="tabpanel" aria-labelledby="tab-digest">
     <details class="sec" open id="sumSec">
-      <summary>Summary</summary>
+      <summary><b class="dl">Summary</b></summary>
       <div class="secbody digest"><ul id="summary"><li>The summary will appear after the first update.</li></ul></div>
     </details>
     <details class="sec" open id="nowSec" hidden>
-      <summary>Up next</summary>
+      <summary><b class="dl">Up next</b></summary>
       <ul class="rows secbody" id="nowList"></ul>
       <button type="button" class="more" id="toTasks">All tasks</button>
     </details>
@@ -404,11 +406,11 @@ a.mcard.past.notes:hover{opacity:1}
     </form>
     <div id="open"><p class="empty">Loading…</p></div>
     <details class="sec" id="doneSec" hidden>
-      <summary><span id="doneLabel">Closed</span></summary>
+      <summary><span id="doneLabel"><b class="dl">Closed</b></span></summary>
       <ul class="rows secbody" id="doneList"></ul>
     </details>
     <details class="sec" id="archSec" hidden>
-      <summary><span id="archLabel">Archive</span></summary>
+      <summary><span id="archLabel"><b class="dl">Archive</b></span></summary>
       <ul class="rows secbody" id="archList"></ul>
     </details>
     <p class="note" id="tnote">Drag a task with the mouse, or press and hold on a phone. Right-click or a long press opens the status menu.</p>
@@ -519,7 +521,7 @@ function renderProjects(){
     const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
     if(!ps.length)return"";
     const isOpen=prev[k]??secUI("g:"+k)??(k!=="done");
-    return `<details class="sec" data-g="${k}" ${isOpen?"open":""} style="margin-bottom:24px"><summary>${l} · ${ps.length}</summary><ul class="rows secbody">${ps.map(projRow).join("")}</ul></details>`;
+    return `<details class="sec" data-g="${k}" ${isOpen?"open":""} style="margin-bottom:24px"><summary>${hl(l)} · ${ps.length}</summary><ul class="rows secbody">${ps.map(projRow).join("")}</ul></details>`;
   }).join("");
 }
 document.addEventListener("error",e=>{if(e.target.tagName==="IMG"&&e.target.closest(".av"))e.target.remove()},true);
@@ -531,6 +533,8 @@ const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled
 const st=t=>t.status||(t.done?"done":"todo");
 const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
 const fmtEst=m=>!m||m<=0?"":m<60?`${Math.round(m)}m`:`${Math.floor(m/60)}h${m%60?" "+Math.round(m%60)+"m":""}`;
+// Заголовок секции: первое слово (до запятой) белым жирным, остальное серым
+const hl=t=>{t=String(t);const i=t.indexOf(", ");return i<0?`<span><b class="dl">${esc(t)}</b></span>`:`<span><b class="dl">${esc(t.slice(0,i))}</b>${esc(t.slice(i))}</span>`};
 const TYPES=[["call","Calls"],["review","Review"],["design","Design"],["research","Research"]];
 function typedRows(ts){if(!ts.some(t=>t.type))return ts.map(taskRow).join("");
   const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length);
@@ -630,9 +634,9 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const byDone=(a,b)=>(b.doneAt||"")>(a.doneAt||"")?1:-1;
   const done=vis.filter(t=>!keepInList(t)&&st(t)!=="canceled").sort(byDone);
   const arch=vis.filter(t=>st(t)==="canceled").sort(byDone);
-  $("archLabel").textContent=`Archive · ${arch.length}`;$("archList").innerHTML=arch.map(taskRow).join("");$("archSec").hidden=!arch.length;
+  $("archLabel").innerHTML=`<b class="dl">Archive</b> · ${arch.length}`;$("archList").innerHTML=arch.map(taskRow).join("");$("archSec").hidden=!arch.length;
   $("tn").textContent=openAll.filter(isOpenSt).length||"";
-  $("doneLabel").textContent=`Closed · ${done.length}`;
+  $("doneLabel").innerHTML=`<b class="dl">Closed</b> · ${done.length}`;
   const prev={};$("open").querySelectorAll("details").forEach(d=>prev[d.dataset.k]=d.open);
   // Предыдущий рабочий день (в понедельник и выходные — пятница): открытые задачи на этот день + закрытые в этот день, одна секция.
   // Всё, что просрочено раньше, — одна секция «Просрочено» над ней.
@@ -648,7 +652,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):k==="late"?open.filter(t=>isLate(t.due)).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)):k===pd?[...prevClosed,...open.filter(t=>t.due===k)]:open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);if(inbox.length)groups.unshift(["inbox",inbox]);
   const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"long"})+", "+d.toLocaleDateString("en-US",{day:"numeric",month:"long"})};
   const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
-  const label=k=>k==="inbox"?"Inbox":!k?"No date":k==="week"?`<b class="dl">${weekLabel}</b>`:k==="late"?`<span class="late">Overdue</span>`:k===today?`<b class="dl">Today</b>, ${esc(wd(k))}`:k===tomorrow?`<b class="dl">Tomorrow</b>, ${esc(wd(k))}`:k===pd?(k===yest?"Yesterday, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
+  const label=k=>k==="inbox"?hl("Inbox"):!k?hl("No date"):k==="week"?hl(weekLabel):k==="late"?`<span class="late">${hl("Overdue")}</span>`:k===today?hl("Today, "+wd(k)):k===tomorrow?hl("Tomorrow, "+wd(k)):k===pd?(k===yest?hl("Yesterday, "+wd(k)):hl(cap(wd(k)))):k<today?`<span class="late">${hl(cap(wd(k)))}</span>`:hl(cap(wd(k)));
   const cnt=(k,ts)=>{const o=ts.filter(isOpenSt).length;if(k==="inbox"){const n=ts.filter(t=>t.unread).length;return (o?` · ${o}`:"")+(n?`<span class="nnew"> · ${n} new</span>`:"")}if(k!==pd)return o?` · ${o}`:"";const c=ts.filter(t=>st(t)==="done").length;return [o?(`<span class="late">${o} not done</span>`):"",c?`${c} closed`:""].filter(Boolean).map(x=>" · "+x).join("")};
   const nowT=Date.now(),hm=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   const normT=x=>String(x||"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
@@ -770,7 +774,7 @@ function renderFeed(){
       +(calls.length?`<div class="fsub">Calls<span class="n">${calls.length}</span></div><div class="fcalls">${callHtml}</div>`:"")
       +(done.length?`<div class="fsub">Closed<span class="n">${done.length}</span></div><ul class="rows">${done.map(taskRow).join("")}</ul>`:"")
       +(!sum.length&&!calls.length&&!done.length?`<p class="fempty">Nothing recorded for this day.</p>`:"");
-    return `<details class="sec fday" data-k="${k}" ${(prev[k]??secUI("f:"+k))===false?"":"open"}><summary>${esc(head)}</summary><div class="fblock">${body}</div></details>`}).join("");
+    return `<details class="sec fday" data-k="${k}" ${(prev[k]??secUI("f:"+k))===false?"":"open"}><summary>${hl(head)}</summary><div class="fblock">${body}</div></details>`}).join("");
 }
 async function onCheck(e){
   const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
