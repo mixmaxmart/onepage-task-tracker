@@ -380,7 +380,7 @@ a.mcard.past.notes:hover{opacity:1}
   </div>
 
   <section class="panel" id="digest" role="tabpanel" aria-labelledby="tab-digest">
-    <details class="sec" open>
+    <details class="sec" open id="sumSec">
       <summary>Summary</summary>
       <div class="secbody digest"><ul id="summary"><li>The summary will appear after the first update.</li></ul></div>
     </details>
@@ -431,8 +431,15 @@ a.mcard.past.notes:hover{opacity:1}
 <script>
 const GROUPS=[["blocked","Blocked"],["waiting","Waiting for design"],["active","In progress"],["done","Done"]];
 const STATE={blocked:"blocked",waiting:"waiting for design",active:"in progress",done:"done"};
-let projects=[],tasks=[],meetings=[],feed=[],db=null;const openCalls=new Set();const openRows=new Set();
+const UI=(()=>{try{return JSON.parse(localStorage.getItem("radar.ui")||"{}")||{}}catch{return{}}})();
+const saveUI=()=>{try{localStorage.setItem("radar.ui",JSON.stringify(UI))}catch{}};
+const secUI=k=>UI.sec?.[k];
+function pSet(n){const s=new Set((UI.sets||{})[n]||[]);const sv=()=>{(UI.sets||(UI.sets={}))[n]=[...s].slice(-200);saveUI()};const a=s.add.bind(s),d=s.delete.bind(s),c=s.clear.bind(s);s.add=v=>{a(v);sv();return s};s.delete=v=>{const r=d(v);sv();return r};s.clear=()=>{c();sv()};return s}
+function secKey(d){if(d.id)return d.id;const k=d.dataset.k,g=d.dataset.g;if(g)return"g:"+g;if(k)return(d.closest("#open")?"t:":"f:")+k;return null}
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||d.tagName!=="DETAILS")return;const k=secKey(d);if(k){(UI.sec||(UI.sec={}))[k]=d.open;saveUI()}},true);
+let projects=[],tasks=[],meetings=[],feed=[],db=null;const openCalls=pSet("calls");const openRows=pSet("rows");
 const $=id=>document.getElementById(id);
+["sumSec","nowSec","doneSec","archSec"].forEach(id=>{const v=secUI(id),el=document.getElementById(id);if(el&&v!=null)el.open=v});
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const today=iso(new Date()),tomorrow=iso(new Date(Date.now()+864e5));
@@ -507,7 +514,7 @@ function renderProjects(){
   $("groups").innerHTML=GROUPS.map(([k,l])=>{
     const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
     if(!ps.length)return"";
-    const isOpen=prev[k]??(k!=="done");
+    const isOpen=prev[k]??secUI("g:"+k)??(k!=="done");
     return `<details class="sec" data-g="${k}" ${isOpen?"open":""} style="margin-bottom:24px"><summary>${l} · ${ps.length}</summary><ul class="rows secbody">${ps.map(projRow).join("")}</ul></details>`;
   }).join("");
 }
@@ -515,7 +522,7 @@ document.addEventListener("error",e=>{if(e.target.tagName==="IMG"&&e.target.clos
 document.addEventListener("click",e=>{const c=e.target.closest(".chip.person");document.querySelectorAll(".chip.person.tip").forEach(x=>{if(x!==c)x.classList.remove("tip")});if(c)c.classList.toggle("tip")});
 $("groups").addEventListener("click",e=>{const b=e.target.closest("button.head");if(!b)return;const id=b.dataset.id;openRows.has(id)?openRows.delete(id):openRows.add(id);renderProjects()});
 
-const openTasks=new Set();let dragging=false;
+const openTasks=pSet("tasks");let dragging=false;
 const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled","Canceled"]];
 const st=t=>t.status||(t.done?"done":"todo");
 const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
@@ -645,7 +652,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const gUrl=past?granolaFor(m):"",lnk=gUrl||m.url,tag=lnk?"a":"div",href=lnk?` href="${esc(lnk)}" target="_blank" rel="noopener"`:"";
       const pr=live?Math.min(100,Math.max(0,(nowT-a)/Math.max(1,b-a)*100)):0;
       return `<${tag} class="mcard${live?" now":""}${past?" past":""}${gUrl?" notes":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}${gUrl?`<span class="mg"><img src="/icons/granola.png" alt="">Granola</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
@@ -659,7 +666,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
 }
 // ---------- Backlog: идеи (backlog/<id>) ----------
 // {title, description, projectId, project, links[{label,url}], images[{path,w,h}|{url}], order, createdAt, archived}
-let ideas=[];const openIdeas=new Set();const signed=new Map();let signing=false;
+let ideas=[];const openIdeas=pSet("ideas");const signed=new Map();let signing=false;
 const imgSrc=im=>im.url||signed.get(im.path)?.url||"";
 async function signMissing(){
   const sb=window.radarSB;if(!sb||signing)return;
@@ -754,7 +761,7 @@ function renderFeed(){
       +(calls.length?`<div class="fsub">Calls<span class="n">${calls.length}</span></div><div class="fcalls">${callHtml}</div>`:"")
       +(done.length?`<div class="fsub">Closed<span class="n">${done.length}</span></div><ul class="rows">${done.map(taskRow).join("")}</ul>`:"")
       +(!sum.length&&!calls.length&&!done.length?`<p class="fempty">Nothing recorded for this day.</p>`:"");
-    return `<details class="sec fday" data-k="${k}" ${prev[k]===false?"":"open"}><summary>${esc(head)}</summary><div class="fblock">${body}</div></details>`}).join("");
+    return `<details class="sec fday" data-k="${k}" ${(prev[k]??secUI("f:"+k))===false?"":"open"}><summary>${esc(head)}</summary><div class="fblock">${body}</div></details>`}).join("");
 }
 async function onCheck(e){
   const cb=e.target;if(!cb.dataset.id||!db)return;const done=cb.checked;
@@ -784,12 +791,15 @@ function openMenu(id,x,y){
   const openSub=focus=>{if(subEl){if(focus)subEl.querySelector("button").focus();return}
     subEl=document.createElement("div");subEl.className="menu submenu";subEl.setAttribute("role","menu");
     subEl.innerHTML=dueOpts().map(([k,l])=>`<button role="menuitem" data-due="${k}"><span></span><span>${l}</span><span class="ck">${(t.due||"")===k?"✓":""}</span></button>`).join("");
-    subEl.style.top=(subBtn.offsetTop-5)+"px";if(menuEl.getBoundingClientRect().right+200>innerWidth)subEl.classList.add("left");
-    menuEl.appendChild(subEl);subBtn.setAttribute("aria-expanded","true");if(focus)subEl.querySelector("button").focus()};
+    subEl.style.top=(subBtn.offsetTop-5)+"px";menuEl.appendChild(subEl);
+    const m=menuEl.getBoundingClientRect(),sr=subEl.getBoundingClientRect(),w=sr.width;
+    let L=m.right+4;if(L+w>innerWidth-8)L=m.left-4-w;if(L<8)L=Math.max(8,innerWidth-8-w);subEl.style.left=(L-m.left)+"px";subEl.style.right="auto";
+    const over=sr.bottom-(innerHeight-8);if(over>0)subEl.style.top=Math.max(8-m.top,subBtn.offsetTop-5-over)+"px";
+    subBtn.setAttribute("aria-expanded","true");if(focus)subEl.querySelector("button").focus()};
   subBtn.addEventListener("mouseenter",()=>openSub(false));
   menuEl.addEventListener("mouseover",e=>{const b=e.target.closest("button");if(subEl&&b&&!b.closest(".submenu")&&b!==subBtn)closeSub()});
   menuEl.addEventListener("click",async e=>{
-    if(e.target.closest(".hassub")){subEl?closeSub():openSub(true);return}
+    if(e.target.closest(".hassub")){openSub(true);return}
     const d=e.target.closest("button[data-due]");if(d){closeMenu();const k=d.dataset.due||null;
       try{await db.collection("tasks").doc(id).update({due:k,inbox:false})}catch{$("tnote").textContent="Date wasn't saved. Try again."}return}
     const b=e.target.closest("button[data-s]");if(!b)return;closeMenu();
