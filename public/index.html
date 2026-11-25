@@ -309,6 +309,9 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
+.menu .submenu{position:absolute;left:calc(100% + 4px);min-width:180px;z-index:51}
+.menu .submenu.left{left:auto;right:calc(100% + 4px)}
+.menu .hassub[aria-expanded="true"]{background:var(--pill)}
 /* v40: Backlog */
 .bframe{margin-top:4px;display:flex;flex-direction:column;gap:2px}
 .bframe .fcall{margin:0}
@@ -769,17 +772,33 @@ function openMenu(id,x,y){
   closeMenu();const t=tasks.find(z=>z.id===id);if(!t||!db)return;const cur=st(t);
   menuAt={x:scrollX,y:scrollY,w:innerWidth,h:innerHeight};
   menuEl=document.createElement("div");menuEl.className="menu";menuEl.setAttribute("role","menu");
-  menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Not my task</span><span></span></button>`;
+  menuEl.innerHTML=ST.map(([k,l])=>`<button role="menuitem" data-s="${k}"><span class="si ${k}"></span><span>${l}</span><span class="ck">${k===cur?"✓":""}</span></button>`).join("")+`<hr><button role="menuitem" class="hassub" aria-haspopup="menu" aria-expanded="false"><span></span><span>Move to</span><span class="ck">›</span></button><hr><button role="menuitem" class="del" data-s="removed"><span></span><span>Not my task</span><span></span></button>`;
   document.body.appendChild(menuEl);
   const r=menuEl.getBoundingClientRect();
   menuEl.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";
   menuEl.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+"px";
   menuEl.querySelector("button").focus();
-  menuEl.addEventListener("click",async e=>{const b=e.target.closest("button[data-s]");if(!b)return;closeMenu();
+  const subBtn=menuEl.querySelector(".hassub");let subEl=null;
+  const dueOpts=()=>{const o=[[today,"Today"],[tomorrow,"Tomorrow"]];for(let n=2;n<=7;n++){const k=addD(today,n),d=new Date(k+"T12:00:00");o.push([k,d.toLocaleDateString("en-US",{weekday:"short"})+", "+d.toLocaleDateString("en-US",{month:"short",day:"numeric"})])}o.push(["","No date"]);return o};
+  const closeSub=()=>{if(subEl){subEl.remove();subEl=null;subBtn.setAttribute("aria-expanded","false")}};
+  const openSub=focus=>{if(subEl){if(focus)subEl.querySelector("button").focus();return}
+    subEl=document.createElement("div");subEl.className="menu submenu";subEl.setAttribute("role","menu");
+    subEl.innerHTML=dueOpts().map(([k,l])=>`<button role="menuitem" data-due="${k}"><span></span><span>${l}</span><span class="ck">${(t.due||"")===k?"✓":""}</span></button>`).join("");
+    subEl.style.top=(subBtn.offsetTop-5)+"px";if(menuEl.getBoundingClientRect().right+200>innerWidth)subEl.classList.add("left");
+    menuEl.appendChild(subEl);subBtn.setAttribute("aria-expanded","true");if(focus)subEl.querySelector("button").focus()};
+  subBtn.addEventListener("mouseenter",()=>openSub(false));
+  menuEl.addEventListener("mouseover",e=>{const b=e.target.closest("button");if(subEl&&b&&!b.closest(".submenu")&&b!==subBtn)closeSub()});
+  menuEl.addEventListener("click",async e=>{
+    if(e.target.closest(".hassub")){subEl?closeSub():openSub(true);return}
+    const d=e.target.closest("button[data-due]");if(d){closeMenu();const k=d.dataset.due||null;
+      try{await db.collection("tasks").doc(id).update({due:k,inbox:false})}catch{$("tnote").textContent="Date wasn't saved. Try again."}return}
+    const b=e.target.closest("button[data-s]");if(!b)return;closeMenu();
     try{await setStatus(id,b.dataset.s)}catch{$("tnote").textContent="Status wasn't saved. Try again."}});
   menuEl.addEventListener("keydown",e=>{const bs=[...menuEl.querySelectorAll("button")],i=bs.indexOf(document.activeElement);
     if(e.key==="ArrowDown"){e.preventDefault();bs[(i+1)%bs.length].focus()}
     else if(e.key==="ArrowUp"){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus()}
+    else if(e.key==="ArrowRight"&&document.activeElement===subBtn){e.preventDefault();openSub(true)}
+    else if(e.key==="ArrowLeft"&&subEl){e.preventDefault();closeSub();subBtn.focus()}
     else if(e.key==="Escape"){closeMenu();document.querySelector(`li[data-id="${CSS.escape(id)}"] .thead`)?.focus()}});
 }
 document.addEventListener("pointerdown",e=>{if(menuEl&&!menuEl.contains(e.target))closeMenu()});
