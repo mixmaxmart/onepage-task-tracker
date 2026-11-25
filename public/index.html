@@ -313,6 +313,11 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .mcard .mg img{width:14px;height:14px;border-radius:3px}
 .mcard.past.notes{opacity:.7}
 a.mcard.past.notes:hover{opacity:1}
+.mcard .mg{height:24px;margin:-3px 0;padding:0 10px;border-radius:7px;background:var(--chip);color:var(--muted);opacity:0;transition:opacity .12s,background .12s,color .12s}
+a.mcard:hover .mg,a.mcard:focus-visible .mg{opacity:1}
+a.mcard .mg:hover{background:var(--chip-h);color:var(--fg)}
+.mcard.past.notes{opacity:.45}
+a.mcard.past.notes:hover{opacity:1}
 /* v34: live call — "Now" on the right, grey progress fill over the card */
 .mcard{position:relative;overflow:hidden}
 .mcard.now .mt{color:var(--muted)}
