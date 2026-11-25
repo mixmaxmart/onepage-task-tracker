@@ -309,6 +309,9 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
+.tlist>li.tsub{list-style:none;font-size:12px;color:var(--faint);padding:10px 10px 4px;letter-spacing:.01em}
+.tlist>li.tsub:first-child{padding-top:4px}
+.rows>li.tsub+li.task::before{content:none}
 .menu .submenu{position:absolute;left:calc(100% + 4px);min-width:180px;z-index:51}
 .menu .submenu.left{left:auto;right:calc(100% + 4px)}
 .menu .hassub[aria-expanded="true"]{background:var(--pill)}
@@ -527,6 +530,10 @@ const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled
 const st=t=>t.status||(t.done?"done":"todo");
 const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
 const fmtEst=m=>!m||m<=0?"":m<60?`${Math.round(m)}m`:`${Math.floor(m/60)}h${m%60?" "+Math.round(m%60)+"m":""}`;
+const TYPES=[["call","Calls"],["review","Review"],["design","Design"],["research","Research"]];
+function typedRows(ts){if(!ts.some(t=>t.type))return ts.map(taskRow).join("");
+  const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length);
+  return groups.map(([k,l,g])=>{const m=g.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return `<li class="tsub" data-type="${k}">${l} · ${g.length}${m?` · ~${fmtEst(m)}`:""}</li>`+g.map(taskRow).join("")}).join("")}
 function taskRow(t){
   const s=st(t),closed=!isOpenSt(t);
   const late=t.due&&!closed&&t.due<today;
@@ -559,6 +566,7 @@ async function saveOrder(li){
   const t=tasks.find(x=>x.id===li.dataset.id);if(!t||!db)return;t.order=o;
   let due=li.parentNode.dataset.due||null;const toInbox=due==="inbox";if(toInbox)due=t.due||null;if(due==="week")due=inWeek(t.due)?t.due:weekTarget;if(due==="late"){const dw=new Date().getDay(),pd=addD(today,-(dw===1?3:dw===0?2:1));due=t.due&&t.due<pd?t.due:addD(pd,-1)}const patch={order:o};
   if((t.due||null)!==due){patch.due=due;t.due=due}
+  {let p=li.previousElementSibling;while(p&&!p.classList.contains("tsub"))p=p.previousElementSibling;if(p){const ty=p.dataset.type||null;if((t.type||null)!==ty&&!(ty===null&&t.type&&!TYPES.some(x=>x[0]===t.type))){patch.type=ty;t.type=ty}}}
   if(toInbox!==!!t.inbox){patch.inbox=toInbox;t.inbox=toInbox}
   try{await db.collection("tasks").doc(t.id).update(patch)}catch{$("tnote").textContent="Order wasn't saved. Try again."}
 }
@@ -652,7 +660,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const gUrl=past?granolaFor(m):"",lnk=gUrl||m.url,tag=lnk?"a":"div",href=lnk?` href="${esc(lnk)}" target="_blank" rel="noopener"`:"";
       const pr=live?Math.min(100,Math.max(0,(nowT-a)/Math.max(1,b-a)*100)):0;
       return `<${tag} class="mcard${live?" now":""}${past?" past":""}${gUrl?" notes":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}${gUrl?`<span class="mg"><img src="/icons/granola.png" alt="">Granola</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${typedRows(ts)}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
