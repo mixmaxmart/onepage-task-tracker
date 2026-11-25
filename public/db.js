@@ -171,6 +171,8 @@
       if (new Date().toDateString() !== day) location.reload();
       else loadAll().catch(() => {});
     });
+    // Страховка от уснувшего realtime: подтяжка раз в минуту, пока вкладка видна.
+    setInterval(() => { if (document.visibilityState === "visible") loadAll().catch(() => {}); }, 60000);
     return api;
   };
   // Снять экран загрузки: интерфейс показывается только когда есть что показать (или форма входа).
