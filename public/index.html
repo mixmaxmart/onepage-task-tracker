@@ -582,7 +582,8 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const nowT=Date.now(),hm=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   const normT=x=>String(x||"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
   const granolaFor=m=>{const calls=(feed.find(f=>f.id===mDay(m))||{}).calls||[],a=+new Date(m.start);
-    const c=calls.find(c=>c.url&&c.start&&Math.abs(+new Date(c.start)-a)<=15*60e3)||calls.find(c=>c.url&&normT(c.title)===normT(m.title));return c?c.url:""};
+    const dt=c=>c.start?Math.abs(+new Date(c.start)-a):Infinity,near=calls.filter(c=>c.url&&dt(c)<=15*60e3).sort((x,y)=>dt(x)-dt(y));
+    const c=near.find(c=>normT(c.title)===normT(m.title))||calls.find(c=>c.url&&normT(c.title)===normT(m.title)&&dt(c)<12*3600e3)||near[0];return c?c.url:""};
   const meetHtml=k=>{if(!k||k==="late"||k==="inbox")return "";
     const ms=meetings.filter(m=>k==="week"?inWeek(mDay(m)):mDay(m)===k).sort((a,b)=>new Date(a.start)-new Date(b.start));if(!ms.length)return "";
     return `<div class="mcards">${ms.map(m=>{const a=new Date(m.start),b=new Date(m.end||m.start),live=a<=nowT&&b>nowT,past=b<=nowT;
