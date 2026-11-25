@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" class="booting">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="/manifest.webmanifest">
 <title>OnePage Design Radar</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -311,6 +311,13 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .esum{color:var(--faint)}
 .dl{color:var(--fg);font-weight:600}
 .late .dl{color:inherit}
+/* мобилка: без зума и горизонтального скролла */
+html,body{max-width:100%;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@supports (overflow:clip){html,body{overflow-x:clip}}
+main,section.panel,.tframe,.tdetail,.detail,.fblock,.bframe{min-width:0;max-width:100%}
+.tdetail,.detail,.idesc,.task .ttl,.mn{overflow-wrap:anywhere}
+img,video{max-width:100%}
+@media (max-width:520px){input,select,textarea{font-size:16px!important}}
 .task input:checked{background:var(--faint)!important;border-color:var(--faint)!important}
 .si.done{border-color:var(--faint)!important;background:var(--faint)!important}
 .tlist>li.tsub{list-style:none;font-size:14px;color:var(--faint);padding:10px 10px 4px;letter-spacing:.01em}
@@ -536,6 +543,8 @@ const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
 const fmtEst=m=>!m||m<=0?"":m<60?`${Math.round(m)}m`:`${Math.floor(m/60)}h${m%60?" "+Math.round(m%60)+"m":""}`;
 // Заголовок секции: первое слово (до запятой) белым жирным, остальное серым
 const hl=t=>{t=String(t);const i=t.indexOf(", ");return i<0?`<span><b class="dl">${esc(t)}</b></span>`:`<span><b class="dl">${esc(t.slice(0,i))}</b>${esc(t.slice(i))}</span>`};
+// iOS Safari игнорирует user-scalable=no: гасим pinch вручную (double-tap гасит touch-action:manipulation)
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 const TYPES=[["call","Calls"],["review","Review"],["design","Design"],["research","Research"]];
 function typedRows(ts){if(!ts.some(t=>t.type))return ts.map(taskRow).join("");
   const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length);
