@@ -310,7 +310,7 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
 /* v40: Backlog */
-.bframe{margin-top:16px;display:flex;flex-direction:column;gap:2px}
+.bframe{margin-top:4px;display:flex;flex-direction:column;gap:2px}
 .bframe .fcall{margin:0}
 .ich .mn{display:flex;flex-direction:column;gap:2px}
 .isub{font-size:13px;color:var(--muted)}
@@ -320,7 +320,7 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .gi{flex:none;height:260px;max-width:85%;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--raised);scroll-snap-align:start;scroll-margin-left:8px;cursor:zoom-in}
 .gi img{display:block;width:100%;height:100%;object-fit:cover}
 @media (max-width:520px){.gi{height:220px}}
-.idesc{font:inherit;font-size:15px;line-height:1.5;color:var(--fg);background:none;border:0;padding:0;resize:none;width:100%;overflow:hidden}
+.idesc{margin:0;font-size:15px;line-height:1.5;color:var(--fg);white-space:pre-wrap}
 .idesc:focus{outline:none}
 .idesc::placeholder{color:var(--faint)}
 .itools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -335,7 +335,7 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .vcell{flex:none;width:100%;height:100%;display:grid;place-items:center;scroll-snap-align:center;padding:24px}
 .vcell img{max-width:100%;max-height:100%;border-radius:8px}
 /* v41: Backlog — each idea is its own card */
-.bframe{margin-top:16px;display:flex;flex-direction:column;gap:8px;background:none;padding:0}
+.bframe{margin-top:4px;display:flex;flex-direction:column;gap:8px;background:none;padding:0}
 .bframe .fcall.idea{margin:0 -10px;padding:4px;background:var(--raised);border-radius:12px}
 .bframe .fcall.idea.open{background:var(--raised)}
 .bframe .idea .fch:hover{background:var(--pill)}
@@ -412,12 +412,12 @@ a.mcard.past.notes:hover{opacity:1}
   </section>
 
   <section class="panel" id="backlog" role="tabpanel" aria-labelledby="tab-backlog" hidden>
-    <form class="composer" id="ideaform">
+    <form class="composer" id="ideaform" hidden>
       <input id="newidea" type="text" placeholder="Add an idea or paste a link…" aria-label="New idea" autocomplete="off">
       <button class="send" type="submit" id="ideabtn" disabled aria-label="Add"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
     <div id="ideas"></div>
-    <p class="note" id="bnote">Open an idea to add a description, links or images. Paste a screenshot into an open idea to attach it.</p>
+    <p class="note" id="bnote">Send ideas, links and images to Claude in the chat, and they appear here.</p>
     <input type="file" id="ideafile" accept="image/*" multiple hidden>
   </section>
 </div>
@@ -676,14 +676,8 @@ function renderBacklog(noSign){
     return `<div class="fcall idea${op?" open":""}" data-id="${esc(i.id)}"><button type="button" class="fch ich" data-idea="${esc(i.id)}" aria-expanded="${op}"><span class="mn">${esc(i.title||"Untitled")}${meta?`<span class="isub">${meta}</span>`:""}</span><svg class="chev"><use href="#chev"/></svg></button>${op?`<div class="ibody">
       ${(i.links||[]).length?`<div class="chips">${i.links.map(linkChip).join("")}</div>`:""}
       ${ims.length?`<div class="gal" role="list">${ims.map((im,n)=>{const src=imgSrc(im);const r=im.w&&im.h?im.w/im.h:4/3;return `<button type="button" class="gi" role="listitem" data-idea="${esc(i.id)}" data-n="${n}" style="aspect-ratio:${r.toFixed(3)}" aria-label="Open image ${n+1}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:""}</button>`}).join("")}</div>`:""}
-      <textarea class="idesc" data-idea="${esc(i.id)}" rows="2" placeholder="Description, research notes…">${esc(i.description||"")}</textarea>
-      <div class="itools">
-        <select class="iproj" data-idea="${esc(i.id)}" aria-label="Project">${projOpts(i.projectId)}</select>
-        <input class="ilink" data-idea="${esc(i.id)}" type="url" placeholder="Paste a link…" aria-label="Add link">
-        <button type="button" class="ibtn iimg" data-idea="${esc(i.id)}">Add images</button>
-        <button type="button" class="ibtn iarch" data-idea="${esc(i.id)}">Archive</button>
-      </div></div>`:""}</div>`}).join("")+`</div>`;
-  L.querySelectorAll(".idesc").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+2+"px"});
+      ${i.description?`<p class="idesc">${esc(i.description)}</p>`:""}
+    </div>`:""}</div>`}).join("")+`</div>`;
   if(!noSign)signMissing();
 }
 const isUrl=v=>/^https?:\/\/\S+$/i.test(v);
@@ -725,7 +719,7 @@ $("ideas").addEventListener("input",e=>{const t=e.target.closest(".idesc");if(t)
 $("ideas").addEventListener("focusout",e=>{const t=e.target.closest(".idesc");if(!t)return;const i=ideas.find(x=>x.id===t.dataset.idea);if(i&&(i.description||"")!==t.value)upIdea(i.id,{description:t.value})});
 $("ideas").addEventListener("keydown",e=>{const t=e.target.closest(".ilink");if(!t||e.key!=="Enter")return;e.preventDefault();const v=t.value.trim();if(!isUrl(v))return;
   const i=ideas.find(x=>x.id===t.dataset.idea);if(!i)return;t.value="";upIdea(i.id,{links:[...(i.links||[]),{label:linkLabel(v),url:v}]})});
-document.addEventListener("paste",e=>{if($("backlog").hidden)return;const files=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith("image/"));if(!files.length)return;
+document.addEventListener("paste",e=>{return;const files=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith("image/"));if(!files.length)return;
   const el=document.activeElement?.closest?.(".idea")||(openIdeas.size===1?document.querySelector(".idea.open"):null);if(!el)return;e.preventDefault();addImages(el.dataset.id,files)});
 // Просмотр картинки на весь экран: листается свайпом/стрелками, закрывается кликом или Esc
 function openViewer(id,n){
