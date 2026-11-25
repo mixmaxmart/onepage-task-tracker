@@ -307,6 +307,8 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 #open details.sec[data-k="inbox"] .tframe .task:hover,#open details.sec[data-k="inbox"] .tframe .task.open{background:var(--raised)}
 .task .nd{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:2px}
 .nnew{color:var(--accent)}
+.task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
+.esum{color:var(--faint)}
 /* v34: live call — "Now" on the right, grey progress fill over the card */
 .mcard{position:relative;overflow:hidden}
 .mcard.now .mt{color:var(--muted)}
@@ -458,6 +460,7 @@ const openTasks=new Set();let dragging=false;
 const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled","Canceled"]];
 const st=t=>t.status||(t.done?"done":"todo");
 const isOpenSt=t=>st(t)==="todo"||st(t)==="progress";
+const fmtEst=m=>!m||m<=0?"":m<60?`${Math.round(m)}m`:`${Math.floor(m/60)}h${m%60?" "+Math.round(m%60)+"m":""}`;
 function taskRow(t){
   const s=st(t),closed=!isOpenSt(t);
   const late=t.due&&!closed&&t.due<today;
@@ -468,7 +471,7 @@ function taskRow(t){
     ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
     <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
-      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}</span><span class="right ${late?"late":""}">${t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):""}</span>
+      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
       ${sub?`<span class="sub">${sub}</span>`:""}
     </button>
     ${isOpen?`<div class="tdetail">
@@ -567,7 +570,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   for(const m of meetings){const k=mDay(m);if(k>tomorrow&&!inWeek(k))keys.add(k)}
   if(prevClosed.length)keys.add(pd);
   const sk=k=>k==="week"?weekEnd+"~":k==="late"?"0":k;
-  const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):k==="late"?open.filter(t=>isLate(t.due)).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)):k===pd?[...prevClosed,...open.filter(t=>t.due===k)]:open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);groups.unshift(["inbox",inbox]);
+  const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):k==="late"?open.filter(t=>isLate(t.due)).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)):k===pd?[...prevClosed,...open.filter(t=>t.due===k)]:open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);if(inbox.length)groups.unshift(["inbox",inbox]);
   const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"long"})+", "+d.toLocaleDateString("en-US",{day:"numeric",month:"long"})};
   const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
   const label=k=>k==="inbox"?"Inbox":!k?"No date":k==="week"?weekLabel:k==="late"?`<span class="late">Overdue</span>`:k===today?"Today, "+esc(wd(k)):k===tomorrow?"Tomorrow, "+esc(wd(k)):k===pd?(k===yest?"Yesterday, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
@@ -579,7 +582,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const tag=m.url?"a":"div",href=m.url?` href="${esc(m.url)}" target="_blank" rel="noopener"`:"";
       const pr=live?Math.min(100,Math.max(0,(nowT-a)/Math.max(1,b-a)*100)):0;
       return `<${tag} class="mcard${live?" now":""}${past?" past":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
+  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec" data-k="${k||"none"}" ${prev[k||"none"]===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${ts.map(taskRow).join("")}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
