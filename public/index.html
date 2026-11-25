@@ -334,6 +334,12 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .vstrip::-webkit-scrollbar{display:none}
 .vcell{flex:none;width:100%;height:100%;display:grid;place-items:center;scroll-snap-align:center;padding:24px}
 .vcell img{max-width:100%;max-height:100%;border-radius:8px}
+/* v41: Backlog — each idea is its own card */
+.bframe{margin-top:16px;display:flex;flex-direction:column;gap:8px;background:none;padding:0}
+.bframe .fcall.idea{margin:0 -10px;padding:4px;background:var(--raised);border-radius:12px}
+.bframe .fcall.idea.open{background:var(--raised)}
+.bframe .idea .fch:hover{background:var(--pill)}
+.bframe .idea.open .fch:hover{background:none}
 /* v38: iPhone home-screen app — keep content below the status bar */
 body{padding-top:calc(20px + env(safe-area-inset-top,0px))}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:100;pointer-events:none}
@@ -664,7 +670,7 @@ function renderBacklog(noSign){
   const list=ideas.filter(i=>!i.archived).sort((a,b)=>(a.order??0)-(b.order??0)||((b.createdAt||"")>(a.createdAt||"")?1:-1));
   if(!list.length){L.innerHTML=`<p class="empty">No ideas yet. Add one above.</p>`;return}
   const projOpts=sel=>`<option value="">No project</option>`+projects.slice().sort((a,b)=>(a.order??99)-(b.order??99)).map(p=>`<option value="${esc(p.id)}"${p.id===sel?" selected":""}>${esc(p.name)}</option>`).join("");
-  L.innerHTML=`<div class="tframe bframe">`+list.map(i=>{const op=openIdeas.has(i.id),ims=i.images||[],proj=projects.find(p=>p.id===i.projectId);
+  L.innerHTML=`<div class="bframe">`+list.map(i=>{const op=openIdeas.has(i.id),ims=i.images||[],proj=projects.find(p=>p.id===i.projectId);
     const pname=proj?proj.name:i.project||"";
     const meta=[pname&&esc(pname),ims.length?`${ims.length} image${ims.length>1?"s":""}`:""].filter(Boolean).join(" · ");
     return `<div class="fcall idea${op?" open":""}" data-id="${esc(i.id)}"><button type="button" class="fch ich" data-idea="${esc(i.id)}" aria-expanded="${op}"><span class="mn">${esc(i.title||"Untitled")}${meta?`<span class="isub">${meta}</span>`:""}</span><svg class="chev"><use href="#chev"/></svg></button>${op?`<div class="ibody">
