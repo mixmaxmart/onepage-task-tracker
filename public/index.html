@@ -309,7 +309,8 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
-.tlist>li.tsub{list-style:none;font-size:12px;color:var(--faint);padding:10px 10px 4px;letter-spacing:.01em}
+.dl{color:var(--fg);font-weight:600}
+.tlist>li.tsub{list-style:none;font-size:14px;color:var(--faint);padding:10px 10px 4px;letter-spacing:.01em}
 .tlist>li.tsub:first-child{padding-top:4px}
 .rows>li.tsub+li.task::before{content:none}
 .menu .submenu{position:absolute;left:calc(100% + 4px);min-width:180px;z-index:51}
@@ -647,7 +648,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const groups=[...keys].sort((a,b)=>sk(a)<sk(b)?-1:1).map(k=>[k,k==="week"?open.filter(t=>inWeek(t.due)):k==="late"?open.filter(t=>isLate(t.due)).sort((a,b)=>a.due<b.due?-1:a.due>b.due?1:(a.order??500)-(b.order??500)):k===pd?[...prevClosed,...open.filter(t=>t.due===k)]:open.filter(t=>t.due===k)]);groups.push(["",open.filter(t=>!t.due)]);if(inbox.length)groups.unshift(["inbox",inbox]);
   const wd=k=>{const d=new Date(k+"T12:00:00");return d.toLocaleDateString("en-US",{weekday:"long"})+", "+d.toLocaleDateString("en-US",{day:"numeric",month:"long"})};
   const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
-  const label=k=>k==="inbox"?"Inbox":!k?"No date":k==="week"?weekLabel:k==="late"?`<span class="late">Overdue</span>`:k===today?"Today, "+esc(wd(k)):k===tomorrow?"Tomorrow, "+esc(wd(k)):k===pd?(k===yest?"Yesterday, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
+  const label=k=>k==="inbox"?"Inbox":!k?"No date":k==="week"?weekLabel:k==="late"?`<span class="late">Overdue</span>`:k===today?`<b class="dl">Today, ${esc(wd(k))}</b>`:k===tomorrow?`<b class="dl">Tomorrow, ${esc(wd(k))}</b>`:k===pd?(k===yest?"Yesterday, "+esc(wd(k)):esc(cap(wd(k)))):k<today?`<span class="late">${esc(cap(wd(k)))}</span>`:esc(cap(wd(k)));
   const cnt=(k,ts)=>{const o=ts.filter(isOpenSt).length;if(k==="inbox"){const n=ts.filter(t=>t.unread).length;return (o?` · ${o}`:"")+(n?`<span class="nnew"> · ${n} new</span>`:"")}if(k!==pd)return o?` · ${o}`:"";const c=ts.filter(t=>st(t)==="done").length;return [o?(`<span class="late">${o} not done</span>`):"",c?`${c} closed`:""].filter(Boolean).map(x=>" · "+x).join("")};
   const nowT=Date.now(),hm=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   const normT=x=>String(x||"").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
