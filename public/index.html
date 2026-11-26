@@ -463,7 +463,6 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
       <input id="newidea" type="text" placeholder="Add an idea or paste a link…" aria-label="New idea" autocomplete="off">
       <button class="send" type="submit" id="ideabtn" disabled aria-label="Add"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
-    <div id="brun"></div>
     <div id="ideas"></div>
     <p class="note" id="bnote">Send ideas, links and images to Claude in the chat, and they appear here.</p>
     <input type="file" id="ideafile" accept="image/*" multiple hidden>
@@ -921,7 +920,6 @@ $("addform").addEventListener("submit",async e=>{
   $("ideabtn").disabled=!$("newidea").value.trim();
   db.collection("feed").onSnapshot(s=>{feed=s.docs.map(d=>({id:d.id,...d.data()}));renderFeed();renderTasks()},()=>{});
   setInterval(()=>renderTasks(),60000);
-  db.doc("meta/backlog_run").onSnapshot(s=>{brun=s.exists?s.data():null;renderRun()},()=>{});
   db.doc("meta/summary").onSnapshot(s=>{
     if(!s.exists)return;const m=s.data();
     $("stamp").textContent=`Updated ${fd(m.date)}${m.time?", "+m.time:""}`;
