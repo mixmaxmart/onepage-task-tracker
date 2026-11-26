@@ -396,6 +396,7 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
 .subs input:checked{background:var(--faint);border-color:var(--faint)}
 .subs input:checked::after{content:"";width:7px;height:4px;border:solid var(--bg);border-width:0 0 1.6px 1.6px;transform:rotate(-45deg) translate(0,-1px)}
 .subs .sdone span{color:var(--muted);text-decoration:line-through}
+.task input.sp{border-color:var(--act);background:conic-gradient(var(--act) 0 var(--p),transparent 0);box-shadow:inset 0 0 0 2px var(--bg)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -576,10 +577,9 @@ function taskRow(t){
   const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Source",url:t.url}]:[])];
   return `<li class="task ${t.unread?"unread":""} ${closed?"done":""} ${s==="progress"?"prog":""} ${s==="canceled"?"canceled":""} ${isOpen?"open":""}" data-id="${esc(t.id)}">
     ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
-    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
+    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${!closed&&nDone?`class="sp" style="--p:${(nDone/subs.length*100).toFixed(1)}%"`:""} ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
-      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (subs.length?`<span class="scount">${nDone}/${subs.length}${(!closed&&t.estimate)||r?" · ":""}</span>`:"")+(!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
-      ${subs.length?`<span class="pbar" aria-hidden="true"><i style="width:${(nDone/subs.length*100).toFixed(1)}%"></i></span>`:""}
+      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
     </button>
     ${isOpen?`<div class="tdetail">
       ${t.source?`<div class="tsrc">${esc(t.source)}</div>`:""}
@@ -822,8 +822,9 @@ function renderFeed(){
 async function onCheck(e){
   const cb=e.target;
   if(cb.dataset.sub!==undefined){const id=cb.dataset.tid,t=tasks.find(x=>x.id===id);if(!t||!db)return;const j=+cb.dataset.sub;
-    const subs=(t.subtasks||[]).map((x,n)=>n===j?{...x,done:cb.checked}:x);t.subtasks=subs;renderTasks();
-    db.collection("tasks").doc(id).update({subtasks:subs}).catch(()=>{$("tnote").textContent="Couldn't save. Reload the page and try again."});return}
+    const subs=(t.subtasks||[]).map((x,n)=>n===j?{...x,done:cb.checked}:x);t.subtasks=subs;
+    const patch={subtasks:subs};if(st(t)==="todo"&&subs.some(x=>x.done)){patch.status="progress";patch.done=false;t.status="progress";t.done=false}renderTasks();
+    db.collection("tasks").doc(id).update(patch).catch(()=>{$("tnote").textContent="Couldn't save. Reload the page and try again."});return}
   if(!cb.dataset.id||!db)return;const done=cb.checked;
   try{await setStatus(cb.dataset.id,done?"done":"todo")}
   catch{cb.checked=!done;$("tnote").textContent="Couldn't save. Reload the page and try again."}
