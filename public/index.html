@@ -381,6 +381,12 @@ a.mcard.past.notes:hover{opacity:1}
 .mcard .mprog{position:absolute;left:0;top:0;bottom:0;background:rgba(127,127,127,.14);pointer-events:none}
 .mcard>span:not(.mprog){position:relative}
 .tframe .task.open .tdetail,#doneSec .task.open .tdetail,#archSec .task.open .tdetail,.fblock .task.open .tdetail{border-top-color:var(--line2)}
+details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
+.brun{display:flex;align-items:center;gap:10px;margin:12px 0 4px;padding:10px 12px;border-radius:12px;background:var(--raised);font-size:14px;color:var(--fg)}
+.brun .bt{color:var(--muted)}.brun.failed{color:var(--muted)}
+.brun .bdot{width:8px;height:8px;border-radius:50%;background:#3fb950;flex:none}.brun.failed .bdot{background:#f85149}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--fg);animation:bspin .8s linear infinite;flex:none}
+@keyframes bspin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -436,6 +442,7 @@ a.mcard.past.notes:hover{opacity:1}
       <input id="newidea" type="text" placeholder="Add an idea or paste a link…" aria-label="New idea" autocomplete="off">
       <button class="send" type="submit" id="ideabtn" disabled aria-label="Add"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5V2.5M3 6.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
+    <div id="brun"></div>
     <div id="ideas"></div>
     <p class="note" id="bnote">Send ideas, links and images to Claude in the chat, and they appear here.</p>
     <input type="file" id="ideafile" accept="image/*" multiple hidden>
@@ -700,19 +707,31 @@ async function signMissing(){
   try{const {data}=await sb.storage.from("backlog").createSignedUrls(need,7200);for(const r of data||[])if(r.signedUrl)signed.set(r.path,{url:r.signedUrl,exp:now+7.1e6})}catch{}
   signing=false;renderBacklog(true);
 }
+// статус AI-прогона бэклога: meta/backlog_run {state: running|done|failed, title?, started, finished, added, note}
+let brun=null;
+function renderRun(){const E=$("brun");if(!E)return;const r=brun,now=Date.now();let h="";
+  if(r&&r.state){const st=r.started?+new Date(r.started):0,fi=r.finished?+new Date(r.finished):0,hm=x=>new Date(x).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    if(r.state==="running"){if(!(st&&now-st>20*60e3))h=`<div class="brun running" role="status"><span class="spin" aria-hidden="true"></span><span>Claude is adding${r.title?` «${esc(r.title)}»`:" to the backlog"}…</span></div>`}
+    else if(!(fi&&now-fi>864e5)){const f=r.state==="failed";const w=f?"Claude couldn't finish":r.added?`Claude added ${r.added} ${r.added>1?"items":"item"}`:"Claude finished";
+      h=`<div class="brun ${f?"failed":"done"}" role="status"><span class="bdot" aria-hidden="true"></span><span>${w}${r.title?` · ${esc(r.title)}`:""}${fi?`<span class="bt"> · ${hm(fi)}</span>`:""}${r.note?`<span class="bt"> · ${esc(r.note)}</span>`:""}</span></div>`}}
+  E.innerHTML=h}
 function renderBacklog(noSign){
   const L=$("ideas");if(!L)return;
   const list=ideas.filter(i=>!i.archived).sort((a,b)=>(a.order??0)-(b.order??0)||((b.createdAt||"")>(a.createdAt||"")?1:-1));
   if(!list.length){L.innerHTML=`<p class="empty">No ideas yet. Add one above.</p>`;return}
   const projOpts=sel=>`<option value="">No project</option>`+projects.slice().sort((a,b)=>(a.order??99)-(b.order??99)).map(p=>`<option value="${esc(p.id)}"${p.id===sel?" selected":""}>${esc(p.name)}</option>`).join("");
-  L.innerHTML=`<div class="bframe">`+list.map(i=>{const op=openIdeas.has(i.id),ims=i.images||[],proj=projects.find(p=>p.id===i.projectId);
-    const pname=proj?proj.name:i.project||"";
-    const meta=[pname&&esc(pname),ims.length?`${ims.length} image${ims.length>1?"s":""}`:""].filter(Boolean).join(" · ");
+  // группы по проектам (порядок проектов радара), «No project» внизу
+  const po=projects.slice().sort((a,b)=>(a.order??99)-(b.order??99)),pn=i=>(projects.find(p=>p.id===i.projectId)||{}).name||i.project||"";
+  const gm=new Map();for(const i of list){const n=pn(i);if(!gm.has(n))gm.set(n,[]);gm.get(n).push(i)}
+  const rank=n=>{if(!n)return 1e9;const k=po.findIndex(p=>p.name===n);return k<0?1e8:k};
+  const groups=[...gm.entries()].sort((a,b)=>rank(a[0])-rank(b[0])||a[0].localeCompare(b[0]));
+  L.innerHTML=groups.map(([gn,items])=>{const gk="b:"+(gn||"none");return `<details class="sec bsec" data-g="${esc(gk)}" ${secUI("g:"+gk)===false?"":"open"}><summary><b class="dl">${esc(gn||"No project")}</b><span class="esum"> · ${items.length}</span></summary><div class="bframe">`+items.map(i=>{const op=openIdeas.has(i.id),ims=i.images||[];
+    const meta=[ims.length?`${ims.length} image${ims.length>1?"s":""}`:""].filter(Boolean).join(" · ");
     return `<div class="fcall idea${op?" open":""}" data-id="${esc(i.id)}"><button type="button" class="fch ich" data-idea="${esc(i.id)}" aria-expanded="${op}"><span class="mn">${esc(i.title||"Untitled")}${meta?`<span class="isub">${meta}</span>`:""}</span><svg class="chev"><use href="#chev"/></svg></button>${op?`<div class="ibody">
       ${(i.links||[]).length?`<div class="chips">${i.links.map(linkChip).join("")}</div>`:""}
       ${ims.length?`<div class="gal" role="list">${ims.map((im,n)=>{const src=imgSrc(im);const r=im.w&&im.h?im.w/im.h:4/3;return `<button type="button" class="gi" role="listitem" data-idea="${esc(i.id)}" data-n="${n}" style="aspect-ratio:${r.toFixed(3)}" aria-label="Open image ${n+1}">${src?`<img src="${esc(src)}" alt="" loading="lazy">`:""}</button>`}).join("")}</div>`:""}
       ${i.description?`<p class="idesc">${esc(i.description)}</p>`:""}
-    </div>`:""}</div>`}).join("")+`</div>`;
+    </div>`:""}</div>`}).join("")+`</div></details>`}).join("");
   if(!noSign)signMissing();
 }
 const isUrl=v=>/^https?:\/\/\S+$/i.test(v);
@@ -874,6 +893,7 @@ $("addform").addEventListener("submit",async e=>{
   $("ideabtn").disabled=!$("newidea").value.trim();
   db.collection("feed").onSnapshot(s=>{feed=s.docs.map(d=>({id:d.id,...d.data()}));renderFeed();renderTasks()},()=>{});
   setInterval(()=>renderTasks(),60000);
+  db.doc("meta/backlog_run").onSnapshot(s=>{brun=s.exists?s.data():null;renderRun()},()=>{});
   db.doc("meta/summary").onSnapshot(s=>{
     if(!s.exists)return;const m=s.data();
     $("stamp").textContent=`Updated ${fd(m.date)}${m.time?", "+m.time:""}`;
