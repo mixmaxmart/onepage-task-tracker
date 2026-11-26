@@ -364,7 +364,7 @@ img,video{max-width:100%}
 body{padding-top:calc(20px + env(safe-area-inset-top,0px))}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:100;pointer-events:none}
 /* v39: phones — blocks 8px from the screen edge (they bleed 10px, so 18px page padding) */
-@media (max-width:520px){body{margin-left:0;margin-right:0;padding-left:max(18px,calc(env(safe-area-inset-left,0px) + 10px));padding-right:max(18px,calc(env(safe-area-inset-right,0px) + 10px))}}
+@media (max-width:520px){body{margin-left:0;margin-right:0;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}}
 .mcard .mg{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex:none;position:relative}
 .mcard .mg img{width:14px;height:14px;border-radius:3px}
 .mcard.past.notes{opacity:.7}
