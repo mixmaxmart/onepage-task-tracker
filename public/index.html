@@ -587,7 +587,7 @@ function taskRow(t){
   const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Source",url:t.url}]:[])];
   return `<li class="task ${t.unread?"unread":""} ${closed?"done":""} ${s==="progress"?"prog":""} ${s==="canceled"?"canceled":""} ${isOpen?"open":""}" data-id="${esc(t.id)}">
     ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
-    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${!closed&&nDone?`class="sp" style="--p:${(nDone/subs.length*100).toFixed(1)}%"`:""} ${s==="done"?"checked":""} ${db?"":"disabled"}>
+    <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${!closed&&subs.length&&(nDone||s==="progress")?`class="sp" style="--p:${(nDone/subs.length*100).toFixed(1)}%"`:""} ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
       <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
     </button>
