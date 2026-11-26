@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="/icon-180.png?v=4">
 <link rel="icon" type="image/png" href="/icon-192.png?v=4">
 <style>
+a[href],button:not(:disabled),summary,select,label,[role=button],input[type=checkbox],input[type=radio]{cursor:pointer}
 /* Layout: одна колонка в духе нового Claude-приложения; табы-пилюли слева сверху, секции с серыми заголовками и шевронами, строки: иконка, заголовок, серый подзаголовок, статус справа */
 :root{
   --bg:#ffffff; --raised:#f4f4f3; --pill:#ebebea; --fg:#1a1a19; --muted:#73726e; --faint:#a3a29e;
@@ -111,7 +112,7 @@ details.sec>summary .late{color:var(--bad)}
 .task{display:grid;grid-template-columns:14px 18px minmax(0,1fr);gap:0 8px;align-items:start;padding:3px 6px 3px 2px;border-radius:10px;position:relative;background:var(--bg)}
 .task:hover{background:var(--hover)}
 .task.dragging{background:var(--raised);box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:2;opacity:.95}
-.grip{all:unset;width:14px;height:22px;margin-top:6px;border-radius:4px;cursor:grab;color:var(--faint);opacity:0;display:grid;place-items:center;touch-action:none}
+.grip{all:unset;width:14px;height:22px;margin-top:6px;border-radius:4px;cursor:pointer;color:var(--faint);opacity:0;display:grid;place-items:center;touch-action:none}
 .task:hover .grip,.grip:focus-visible,.task.dragging .grip{opacity:1}
 .grip:focus-visible{outline:2px solid var(--accent)}
 @media (hover:none){.grip{opacity:.6}}
