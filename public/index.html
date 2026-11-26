@@ -212,8 +212,8 @@ body{padding-left:max(26px,calc(env(safe-area-inset-left,0px) + 10px));padding-r
 /* v17: expanded task = expanded project */
 .task.open{background:var(--hover)}
 .task.open .thead,.task.open .thead:hover{background:none}
-.tdetail,.task .tdetail{grid-column:1/-1;margin:6px 4px 0 0;padding:14px 0 16px 32px;border-top:1px solid var(--line);gap:14px;font-size:15px}
-@media (max-width:520px){.tdetail,.task .tdetail{padding-left:0;margin-right:8px}}
+.tdetail,.task .tdetail{grid-column:1/-1;margin:6px 4px 0 32px;padding:14px 0 16px 0;border-top:1px solid var(--line);gap:14px;font-size:15px}
+@media (max-width:520px){.tdetail,.task .tdetail{padding-left:0;margin-left:0;margin-right:8px}}
 /* v18: one chip style everywhere, hover = slightly lighter fill */
 :root{--chip-h:rgba(0,0,0,.07)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chip-h:rgba(255,255,255,.12)}}
