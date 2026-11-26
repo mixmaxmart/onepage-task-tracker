@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="/icon-180.png?v=4">
 <link rel="icon" type="image/png" href="/icon-192.png?v=4">
 <style>
+.tproj{color:var(--muted);font-weight:400;margin-left:8px}.tsrc{color:var(--muted);font-size:14px}
 body:not(.dnd) details.sec.esec{display:none}
 a[href],button:not(:disabled),summary,select,label,[role=button],input[type=checkbox],input[type=radio]{cursor:pointer}
 /* Layout: одна колонка в духе нового Claude-приложения; табы-пилюли слева сверху, секции с серыми заголовками и шевронами, строки: иконка, заголовок, серый подзаголовок, статус справа */
@@ -556,15 +557,14 @@ function taskRow(t){
   const late=t.due&&!closed&&t.due<today;
   const isOpen=openTasks.has(t.id);
   const links=[...(t.links||[]),...(t.url&&!(t.links||[]).some(l=>l.url===t.url)?[{label:"Source",url:t.url}]:[])];
-  const sub=[t.project&&esc(t.project),t.source&&esc(t.source)].filter(Boolean).join(" · ");
   return `<li class="task ${t.unread?"unread":""} ${closed?"done":""} ${s==="progress"?"prog":""} ${s==="canceled"?"canceled":""} ${isOpen?"open":""}" data-id="${esc(t.id)}">
     ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
     <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
-      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
-      ${sub?`<span class="sub">${sub}</span>`:""}
+      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
     </button>
     ${isOpen?`<div class="tdetail">
+      ${t.source?`<div class="tsrc">${esc(t.source)}</div>`:""}
       ${links.length?`<div class="chips">${links.map(linkChip).join("")}</div>`:""}
       <p>${t.description?esc(t.description):`<span class="s" style="color:var(--faint)">No context yet.</span>`}</p>
     </div>`:""}
