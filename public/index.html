@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="/icon-180.png?v=4">
 <link rel="icon" type="image/png" href="/icon-192.png?v=4">
 <style>
-.tproj{color:var(--muted);font-weight:400;margin-left:8px}.tsrc{color:var(--muted);font-size:14px}
+.tproj{color:var(--muted);font-weight:400;margin-left:8px}.tsrc{color:var(--muted)}
 body:not(.dnd) details.sec.esec{display:none}
 a[href],button:not(:disabled),summary,select,label,[role=button],input[type=checkbox],input[type=radio]{cursor:pointer}
 /* Layout: одна колонка в духе нового Claude-приложения; табы-пилюли слева сверху, секции с серыми заголовками и шевронами, строки: иконка, заголовок, серый подзаголовок, статус справа */
@@ -596,10 +596,9 @@ function taskRow(t,mode){const inP=mode==="proj";
       <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${inP?(t.due?`<span class="tproj">${esc(fd(t.due))}</span>`:""):t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=!inP&&t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
     </button>
     ${isOpen?`<div class="tdetail">
-      ${t.source?`<div class="tsrc">${esc(t.source)}</div>`:""}
       ${subs.length?`<ul class="subs">${subs.map((x,j)=>`<li class="${x.done?"sdone":""}"><label><input type="checkbox" class="sub" data-tid="${esc(t.id)}" data-sub="${j}" ${x.done?"checked":""} ${db?"":"disabled"}><span>${esc(x.title)}</span></label></li>`).join("")}</ul>`:""}
       ${links.length?`<div class="chips">${links.map(linkChip).join("")}</div>`:""}
-      <p>${t.description?esc(t.description):`<span class="s" style="color:var(--faint)">No context yet.</span>`}</p>
+      <p>${t.description||t.source?`${esc(t.description||"")}${t.source?`<span class="tsrc">${t.description?" · ":""}${esc(t.source)}</span>`:""}`:`<span class="s" style="color:var(--faint)">No context yet.</span>`}</p>
     </div>`:""}
   </li>`;
 }
