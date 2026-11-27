@@ -549,7 +549,7 @@ function projRow(p){
     ${open?`<div class="detail">
       ${refsHtml(p)}
       ${teamHtml(p)}
-      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Tasks</h4><ul class="rows ptasks">${ts.map(taskRow).join("")}</ul></div>`:""})()}
+      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Tasks</h4><ul class="rows ptasks">${ts.map(t=>taskRow(t,"proj")).join("")}</ul></div>`:""})()}
       ${p.design&&p.design.length?`<div><h4>From design</h4>${ul(p.design)}</div>`:""}
       ${p.now&&p.now.length?`<div><h4>What's happening</h4>${ul(p.now)}</div>`:""}
       ${(p.links||[]).length?`<div><h4>Links</h4><div class="chips">${p.links.map(linkChip).join("")}</div></div>`:""}
@@ -583,7 +583,7 @@ const TYPES=[["call","Calls"],["review","Review"],["design","Design"],["research
 function typedRows(ts,mi){const hasM=mi&&mi.n>0;if(!hasM&&!ts.some(t=>t.type))return ts.map(taskRow).join("");
   const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length||(hasM&&g[0]==="call"));
   return groups.map(([k,l,g])=>{const wm=hasM&&k==="call";const m=g.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0)+(wm?mi.m:0),n=g.length+(wm?mi.n:0);return `<li class="tsub" data-type="${k}">${l} · ${n}${m?` · ~${fmtEst(m)}`:""}</li>`+(wm?`<li class="mli">${mi.html}</li>`:"")+g.map(taskRow).join("")}).join("")}
-function taskRow(t){
+function taskRow(t,mode){const inP=mode==="proj";
   const s=st(t),closed=!isOpenSt(t);
   const late=t.due&&!closed&&t.due<today;
   const isOpen=openTasks.has(t.id);
@@ -593,7 +593,7 @@ function taskRow(t){
     ${closed?"":`<button class="grip" type="button" aria-label="Drag: ${esc(t.title)}" title="Drag"><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1"/><circle cx="6" cy="2" r="1"/><circle cx="2" cy="6" r="1"/><circle cx="6" cy="6" r="1"/><circle cx="2" cy="10" r="1"/><circle cx="6" cy="10" r="1"/></g></svg></button>`}
     <input type="checkbox" data-id="${esc(t.id)}" aria-label="Done: ${esc(t.title)}" ${!closed&&subs.length&&(nDone||s==="progress")?`class="sp" style="--p:${(nDone/subs.length*100).toFixed(1)}%"`:""} ${s==="done"?"checked":""} ${db?"":"disabled"}>
     <button class="thead" type="button" data-id="${esc(t.id)}" aria-expanded="${isOpen}">
-      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
+      <span class="title">${t.unread?`<span class="nd" role="img" aria-label="New"></span>`:""}${esc(t.title)}${inP?(t.due?`<span class="tproj">${esc(fd(t.due))}</span>`:""):t.project?`<span class="tproj">${esc(t.project)}</span>`:""}</span><span class="right ${late?"late":""}">${(()=>{const r=!inP&&t.due&&(closed||inWeek(t.due))?esc(closed?fd(t.due):new Date(t.due+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})):"";return (!closed&&t.estimate?`<span class="est">${fmtEst(t.estimate)}${r?" · ":""}</span>`:"")+r})()}</span>
     </button>
     ${isOpen?`<div class="tdetail">
       ${t.source?`<div class="tsrc">${esc(t.source)}</div>`:""}
