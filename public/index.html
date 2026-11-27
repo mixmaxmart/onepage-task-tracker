@@ -314,6 +314,8 @@ a.mcard:hover,a.mcard:focus-visible{background:var(--chip-h,rgba(0,0,0,.07));out
 .nnew{color:var(--accent)}
 .task .right .est{color:var(--faint);font-variant-numeric:tabular-nums}
 .esum{color:var(--faint)}
+.rows>li.mli::before,.rows>li.mli::after,.rows>li.mli+li::before{content:none}
+.tlist>li.mli{list-style:none;margin:0 0 4px}.tlist>li.mli .mcards{margin:0}
 .dl{color:var(--fg);font-weight:600}
 .late .dl{color:inherit}
 /* мобилка: без зума и горизонтального скролла */
@@ -578,9 +580,9 @@ const hl=t=>{t=String(t);const i=t.indexOf(", ");return i<0?`<span><b class="dl"
 // iOS Safari игнорирует user-scalable=no: гасим pinch вручную (double-tap гасит touch-action:manipulation)
 document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
 const TYPES=[["call","Calls"],["review","Review"],["design","Design"],["research","Research"]];
-function typedRows(ts){if(!ts.some(t=>t.type))return ts.map(taskRow).join("");
-  const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length);
-  return groups.map(([k,l,g])=>{const m=g.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return `<li class="tsub" data-type="${k}">${l} · ${g.length}${m?` · ~${fmtEst(m)}`:""}</li>`+g.map(taskRow).join("")}).join("")}
+function typedRows(ts,mi){const hasM=mi&&mi.n>0;if(!hasM&&!ts.some(t=>t.type))return ts.map(taskRow).join("");
+  const known=TYPES.map(x=>x[0]),groups=[...TYPES,["","Other"]].map(([k,l])=>[k,l,ts.filter(t=>k?t.type===k:!known.includes(t.type))]).filter(g=>g[2].length||(hasM&&g[0]==="call"));
+  return groups.map(([k,l,g])=>{const wm=hasM&&k==="call";const m=g.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0)+(wm?mi.m:0),n=g.length+(wm?mi.n:0);return `<li class="tsub" data-type="${k}">${l} · ${n}${m?` · ~${fmtEst(m)}`:""}</li>`+(wm?`<li class="mli">${mi.html}</li>`:"")+g.map(taskRow).join("")}).join("")}
 function taskRow(t){
   const s=st(t),closed=!isOpenSt(t);
   const late=t.due&&!closed&&t.due<today;
@@ -702,13 +704,14 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
   const granolaFor=m=>{const calls=(feed.find(f=>f.id===mDay(m))||{}).calls||[],a=+new Date(m.start);
     const dt=c=>c.start?Math.abs(+new Date(c.start)-a):Infinity,near=calls.filter(c=>c.url&&dt(c)<=15*60e3).sort((x,y)=>dt(x)-dt(y));
     const c=near.find(c=>normT(c.title)===normT(m.title))||calls.find(c=>c.url&&normT(c.title)===normT(m.title)&&dt(c)<12*3600e3)||near[0];return c?c.url:""};
-  const meetHtml=k=>{if(!k||k==="late"||k==="inbox")return "";
-    const ms=meetings.filter(m=>k==="week"?inWeek(mDay(m)):mDay(m)===k).sort((a,b)=>new Date(a.start)-new Date(b.start));if(!ms.length)return "";
+  const meetsFor=k=>!k||k==="late"||k==="inbox"?[]:meetings.filter(m=>k==="week"?inWeek(mDay(m)):mDay(m)===k).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const meetInfo=k=>{const ms=meetsFor(k);return {n:ms.length,m:ms.reduce((x,m)=>x+Math.max(0,(new Date(m.end||m.start)-new Date(m.start))/60000),0),html:ms.length?meetHtml(k):""}};
+  const meetHtml=k=>{const ms=meetsFor(k);if(!ms.length)return "";
     return `<div class="mcards">${ms.map(m=>{const a=new Date(m.start),b=new Date(m.end||m.start),live=a<=nowT&&b>nowT,past=b<=nowT;
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const gUrl=past?granolaFor(m):"",lnk=gUrl||m.url,tag=lnk?"a":"div",href=lnk?` href="${esc(lnk)}" target="_blank" rel="noopener"`:"";
       const pr=live?Math.min(100,Math.max(0,(nowT-a)/Math.max(1,b-a)*100)):0;
       return `<${tag} class="mcard${live?" now":""}${past?" past":""}${gUrl?" notes":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}${gUrl?`<span class="mg"><img src="/icons/granola.png" alt="">Granola</span>`:""}</${tag}>`}).join("")}</div>`};
-  $("open").innerHTML=groups.map(([k,ts])=>`<details class="sec${!ts.length&&!meetHtml(k)?" esec":""}" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0);return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe">${meetHtml(k)}<ul class="rows tlist" data-due="${k}">${typedRows(ts)}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`).join("");
+  $("open").innerHTML=groups.map(([k,ts])=>{const mi=meetInfo(k);return `<details class="sec${!ts.length&&!mi.n?" esec":""}" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0)+mi.m;return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe"><ul class="rows tlist" data-due="${k}">${typedRows(ts,mi)}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`}).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
   {// Ближайшие: все незакрытые задачи с просрочкой, на сегодня и завтра, в том же порядке, что во вкладке «Задачи».
