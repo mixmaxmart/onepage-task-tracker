@@ -1,5 +1,5 @@
 // Оболочка приложения работает офлайн; данные всегда идут из сети (Supabase).
-const CACHE = "radar-v69";
+const CACHE = "radar-v70";
 const SHELL = ["/", "/config.js", "/db.js", "/vendor/supabase-2.118.0.js", "/manifest.webmanifest", "/icon-180.png", "/icon-192.png", "/icon-512.png", "/icons/granola.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => {

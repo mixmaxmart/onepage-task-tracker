@@ -412,19 +412,71 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
 .si.done{opacity:.45}
 /* Кружок «в работе»: зазор между кольцом и заливкой прозрачный, без тёмного внутреннего кольца на карточке */
 .task.prog>input,.task>input.sp{box-shadow:none!important;box-sizing:border-box;padding:2px;background-clip:content-box}
+/* ---------- сайдбар ---------- */
+.booting .shell{visibility:hidden}
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);gap:36px;align-items:start;max-width:1100px;margin:0 auto}
+.side{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;display:flex;flex-direction:column;gap:18px;padding:0 4px 8px 0;font-size:14px;scrollbar-width:none}
+.side::-webkit-scrollbar{display:none}
+.sidetop{display:flex;align-items:center;justify-content:space-between;height:32px;padding-left:10px}
+.brand{font-weight:600;font-size:14px}
+.sidex,.sidebtn{all:unset;display:none;place-items:center;width:32px;height:32px;border-radius:8px;color:var(--muted);cursor:pointer}
+.sidex:hover,.sidebtn:hover{background:var(--hover);color:var(--fg)}
+.snav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.sitem{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+.sitem:hover{background:var(--hover);color:var(--fg)}
+.sitem[aria-current="page"]{background:var(--pill);color:var(--fg)}
+.sitem:focus-visible,.shead:focus-visible,.sidex:focus-visible,.sidebtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nico{flex:none;width:16px;height:16px}
+.sl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn{color:var(--faint);font-size:12px;margin-left:auto}
+.sitem.proj .ico{flex:none;width:10px;height:10px;margin:0 3px}
+.sgroup{display:flex;flex-direction:column;gap:2px}
+.shead{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;color:var(--faint);font-size:12px;cursor:pointer;border-radius:8px}
+.shead:hover{color:var(--muted)}
+.shead::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);order:1;margin-left:2px}
+.shead[aria-expanded="false"]::after{transform:rotate(-45deg)}
+.shead .sn{order:2}
+.sstamp{margin:auto 0 0;padding:0 10px}
+.wrap{width:100%;margin:0}
+.shell>.wrap{max-width:760px}
+.top{min-height:32px;justify-content:flex-start}
+.ptitle{font-size:15px;font-weight:600}
+.scrim{display:none}
+/* страница проекта */
+.ppage{display:flex;flex-direction:column;gap:22px}
+.phead h1{margin:0;font-size:24px;line-height:1.25;font-weight:600;display:flex;align-items:center;gap:12px}
+.phead h1 .ico{flex:none;margin:0;width:14px;height:14px}
+.pmeta{margin:4px 0 0 26px;color:var(--muted);font-size:14px}
+.ppage section h4{margin:0 0 8px;font-size:13px;font-weight:400;color:var(--muted)}
+.ppage section ul:not(.rows){margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.ppage section li::marker{color:var(--faint)}
+@media (max-width:720px){
+  .shell{display:block}
+  .side{position:fixed;z-index:40;left:0;top:0;bottom:0;width:272px;max-height:none;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-right:1px solid var(--line);transform:translateX(-100%);transition:transform .2s ease}
+  .shell.sopen .side{transform:none;box-shadow:0 0 40px rgba(0,0,0,.3)}
+  .shell.sopen .scrim{display:block;position:fixed;inset:0;z-index:39;background:rgba(0,0,0,.35)}
+  .sidex,.sidebtn{display:grid}
+  .top{gap:6px;margin-left:-6px}
+  .shell>.wrap{margin:0 auto}
+}
+#sideProj{display:flex;flex-direction:column;gap:18px}
+.stamp.sstamp{display:block}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
 
+<div class="shell" id="shell">
+<nav class="side" id="side" aria-label="Sections">
+  <div class="sidetop"><span class="brand">Design Radar</span><button type="button" class="sidex" id="sideClose" aria-label="Close menu"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1.75" y="2.75" width="14.5" height="12.5" rx="2" ry="2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></rect><line x1="4.75" y1="5.75" x2="4.75" y2="12.25" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" data-color="color-2"></line></svg></button></div>
+  <ul class="snav" id="snav"><li><button type="button" class="sitem" data-tab="digest"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3.25 15.25H14.75C15.578 15.25 16.25 14.578 16.25 13.75V2.75H4.75V13.75C4.75 14.578 4.078 15.25 3.25 15.25Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path> <path d="M3.25 15.25C2.422 15.25 1.75 14.578 1.75 13.75V6.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path> <path d="M13.25 5.75H7.75V9.25H13.25V5.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path> <path d="M13.25 12.25H7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path></svg><span class="sl">Digest</span></button></li><li><button type="button" class="sitem" data-tab="tasks"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M5.5,9c.863,.867,1.537,1.868,2.1,2.962,1.307-2.491,2.94-4.466,4.9-5.923" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" data-color="color-2"></path><rect x="2.75" y="2.75" width="12.5" height="12.5" rx="2" ry="2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></rect></svg><span class="sl">Tasks</span><span class="sn" id="tn"></span></button></li><li><button type="button" class="sitem" data-tab="feed"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 1.75V16.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path> <path d="M12.25 4.75H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path> <path d="M9 9H5.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path> <path d="M12.25 13.25H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" data-color="color-2" fill="none"></path> <path d="M15.25 2.75H13.25C12.698 2.75 12.25 3.198 12.25 3.75V5.75C12.25 6.302 12.698 6.75 13.25 6.75H15.25C15.802 6.75 16.25 6.302 16.25 5.75V3.75C16.25 3.198 15.802 2.75 15.25 2.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path> <path d="M1.75 8V10C1.75 10.552 2.198 11 2.75 11H4.75C5.302 11 5.75 10.552 5.75 10V8C5.75 7.448 5.302 7 4.75 7H2.75C2.198 7 1.75 7.448 1.75 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path> <path d="M15.25 11.25H13.25C12.698 11.25 12.25 11.698 12.25 12.25V14.25C12.25 14.802 12.698 15.25 13.25 15.25H15.25C15.802 15.25 16.25 14.802 16.25 14.25V12.25C16.25 11.698 15.802 11.25 15.25 11.25Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg><span class="sl">Feed</span></button></li><li><button type="button" class="sitem" data-tab="backlog"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><line x1="6.75" y1="13.25" x2="11.25" y2="13.25" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" data-color="color-2"></line><path d="M14,6.75c0-3.113-2.846-5.562-6.078-4.887-1.932,.403-3.475,1.993-3.834,3.933-.434,2.344,.771,4.459,2.662,5.415v3.039c0,1.105,.895,2,2,2h.5c1.105,0,2-.895,2-2v-3.039c1.63-.824,2.75-2.51,2.75-4.461Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg><span class="sl">Backlog</span></button></li></ul>
+  <div id="sideProj"></div>
+  <p class="stamp sstamp" id="stamp">Loading…</p>
+</nav>
+<div class="scrim" id="scrim"></div>
 <div class="wrap">
   <div class="top">
-    <div class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" id="tab-digest" aria-controls="digest" aria-selected="true" data-tab="digest">Digest</button>
-      <button class="tab" role="tab" id="tab-tasks" aria-controls="tasks" aria-selected="false" data-tab="tasks">Tasks<span class="n" id="tn"></span></button>
-      <button class="tab" role="tab" id="tab-feed" aria-controls="feed" aria-selected="false" data-tab="feed">Feed</button>
-      <button class="tab" role="tab" id="tab-backlog" aria-controls="backlog" aria-selected="false" data-tab="backlog">Backlog</button>
-    </div>
-    <span class="stamp" id="stamp">Loading…</span>
+    <button type="button" class="sidebtn" id="sideOpen" aria-label="Open menu"><svg class="nico" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1.75" y="2.75" width="14.5" height="12.5" rx="2" ry="2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></rect><line x1="4.75" y1="5.75" x2="4.75" y2="12.25" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" data-color="color-2"></line></svg></button>
+    <span class="ptitle" id="ptitle">Digest</span>
   </div>
 
   <section class="panel" id="digest" role="tabpanel" aria-labelledby="tab-digest">
@@ -437,9 +489,10 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
       <ul class="rows secbody" id="nowList"></ul>
       <button type="button" class="more" id="toTasks">All tasks</button>
     </details>
-    <div id="groups"><p class="empty">Active projects will appear here.</p></div>
     <p class="note" id="sources"></p>
   </section>
+
+  <section class="panel" id="project" role="tabpanel" hidden><div id="groups"></div></section>
 
   <section class="panel" id="tasks" role="tabpanel" aria-labelledby="tab-tasks" hidden>
     <form class="composer" id="addform">
@@ -472,6 +525,7 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
     <input type="file" id="ideafile" accept="image/*" multiple hidden>
   </section>
 </div>
+</div>
 
 <script src="/config.js"></script>
 <script src="/vendor/supabase-2.118.0.js"></script>
@@ -485,7 +539,7 @@ const secUI=k=>UI.sec?.[k];
 function pSet(n){const s=new Set((UI.sets||{})[n]||[]);const sv=()=>{(UI.sets||(UI.sets={}))[n]=[...s].slice(-200);saveUI()};const a=s.add.bind(s),d=s.delete.bind(s),c=s.clear.bind(s);s.add=v=>{a(v);sv();return s};s.delete=v=>{const r=d(v);sv();return r};s.clear=()=>{c();sv()};return s}
 function secKey(d){if(d.id)return d.id;const k=d.dataset.k,g=d.dataset.g;if(g)return"g:"+g;if(k)return(d.closest("#open")?"t:":"f:")+k;return null}
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||d.tagName!=="DETAILS")return;const k=secKey(d);if(k){(UI.sec||(UI.sec={}))[k]=d.open;saveUI()}},true);
-let projects=[],tasks=[],meetings=[],feed=[],db=null;const openCalls=pSet("calls");const openRows=pSet("rows");
+let projects=[],tasks=[],meetings=[],feed=[],db=null;const openCalls=pSet("calls");const openRows=pSet("rows");const sideShut=pSet("sidegroups");
 const $=id=>document.getElementById(id);
 ["sumSec","nowSec","doneSec","archSec"].forEach(id=>{const v=secUI(id),el=document.getElementById(id);if(el&&v!=null)el.open=v});
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -500,12 +554,22 @@ const inWeek=k=>!!k&&k>tomorrow&&k<=weekEnd;
 const fd=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString("en-US",{day:"numeric",month:"short"})}catch{return d}};
 const chev=``;
 
+let curTab="digest";
+const TITLES={digest:"Digest",tasks:"Tasks",feed:"Feed",backlog:"Backlog"};
 function setTab(name){
-  if(!["tasks","feed","backlog"].includes(name))name="digest";
-  for(const b of document.querySelectorAll(".tab"))b.setAttribute("aria-selected",b.dataset.tab===name);
-  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";$("feed").hidden=name!=="feed";$("backlog").hidden=name!=="backlog";
+  if(!["tasks","feed","backlog"].includes(name)&&!String(name).startsWith("p/"))name="digest";
+  curTab=name;
+  for(const b of document.querySelectorAll("#side .sitem"))b.dataset.tab===name?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current");
+  $("digest").hidden=name!=="digest";$("tasks").hidden=name!=="tasks";$("feed").hidden=name!=="feed";$("backlog").hidden=name!=="backlog";$("project").hidden=!name.startsWith("p/");
+  $("ptitle").textContent=TITLES[name]||"";
+  if(name.startsWith("p/"))renderProjects();
 }
-document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;setTab(b.dataset.tab);history.replaceState(null,"","#"+b.dataset.tab)});
+function go(name){setTab(name);history.replaceState(null,"","#"+name);$("shell").classList.remove("sopen");scrollTo(0,0)}
+$("side").addEventListener("click",e=>{const b=e.target.closest(".sitem");if(b){go(b.dataset.tab);return}
+  const h=e.target.closest(".shead");if(h){const k=h.dataset.g,key=k==="done"?"open:done":k;sideShut.has(key)?sideShut.delete(key):sideShut.add(key);renderProjects()}});
+$("sideOpen").addEventListener("click",()=>$("shell").classList.add("sopen"));
+$("sideClose").addEventListener("click",()=>$("shell").classList.remove("sopen"));
+$("scrim").addEventListener("click",()=>$("shell").classList.remove("sopen"));
 window.addEventListener("hashchange",()=>setTab(location.hash.slice(1)));
 setTab(location.hash.slice(1));
 
@@ -538,37 +602,31 @@ function teamHtml(p){
   if(!ms){return p.team&&p.team.length?`<div><h4>Team</h4><dl class="team">${p.team.map(t=>`<dt>${esc(t.role)}</dt><dd>${esc(t.who)}</dd>`).join("")}</dl></div>`:""}
   return `<div><h4>Team</h4><div class="chips">${ms.map(m=>{const tip=[m.role,m.does].filter(Boolean).join(" · ");
     return `<button type="button" class="chip person" data-tip="${esc(tip)}" aria-label="${esc(m.name)}: ${esc(tip)}"><span class="av">${m.avatar?`<img src="${esc(m.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}<i>${esc(initials(m.name))}</i></span>${esc(m.name)}</button>`}).join("")}</div></div>`}
-function projRow(p){
-  const open=openRows.has(p.id);
-  const sub=(p.design&&p.design[0])||(p.now&&p.now[0])||"";
-  return `<li class="row ${open?"open":""}">
-    <button class="head" type="button" data-id="${esc(p.id)}" aria-expanded="${open}">
-      <span class="ico ${esc(p.state)}"></span><span class="title">${esc(p.name)}</span><span class="right">${p.updated?esc(fd(p.updated)):""}</span>
-      <span class="sub">${esc(sub)}</span>
-    </button>
-    ${open?`<div class="detail">
-      ${refsHtml(p)}
-      ${teamHtml(p)}
-      ${(()=>{const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));return ts.length?`<div><h4>Tasks</h4><ul class="rows ptasks">${ts.map(t=>taskRow(t,"proj")).join("")}</ul></div>`:""})()}
-      ${p.design&&p.design.length?`<div><h4>From design</h4>${ul(p.design)}</div>`:""}
-      ${p.now&&p.now.length?`<div><h4>What's happening</h4>${ul(p.now)}</div>`:""}
-      ${(p.links||[]).length?`<div><h4>Links</h4><div class="chips">${p.links.map(linkChip).join("")}</div></div>`:""}
-    </div>`:""}
-  </li>`;
+function projPage(p){
+  const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));
+  const state=(GROUPS.find(([k])=>k===p.state)||[,""])[1];
+  return `<div class="ppage">
+    <header class="phead"><h1><span class="ico ${esc(p.state)}"></span>${esc(p.name)}</h1><p class="pmeta">${esc(state)}${p.updated?` · updated ${esc(fd(p.updated))}`:""}</p></header>
+    ${refsHtml(p)}
+    ${ts.length?`<section><h4>Tasks · ${ts.length}</h4><ul class="rows ptasks">${ts.map(t=>taskRow(t,"proj")).join("")}</ul></section>`:""}
+    ${p.design&&p.design.length?`<section><h4>From design</h4>${ul(p.design)}</section>`:""}
+    ${p.now&&p.now.length?`<section><h4>What's happening</h4>${ul(p.now)}</section>`:""}
+    ${teamHtml(p).replace(/^<div>/,"<section>").replace(/<\/div>$/,"</section>")}
+    ${(p.links||[]).length?`<section><h4>Links</h4><div class="chips">${p.links.map(linkChip).join("")}</div></section>`:""}
+  </div>`;
 }
 function renderProjects(){
-  if(!projects.length)return;
-  const prev={};document.querySelectorAll("#groups details").forEach(d=>prev[d.dataset.g]=d.open);
-  $("groups").innerHTML=GROUPS.map(([k,l])=>{
+  $("sideProj").innerHTML=GROUPS.map(([k,l])=>{
     const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
     if(!ps.length)return"";
-    const isOpen=prev[k]??secUI("g:"+k)??(k!=="done");
-    return `<details class="sec" data-g="${k}" ${isOpen?"open":""} style="margin-bottom:24px"><summary>${hl(l)} · ${ps.length}</summary><ul class="rows secbody">${ps.map(projRow).join("")}</ul></details>`;
+    const closed=k==="done"?!sideShut.has("open:done"):sideShut.has(k);
+    return `<div class="sgroup"><button type="button" class="shead" data-g="${k}" aria-expanded="${!closed}">${esc(l)}<span class="sn">${ps.length}</span></button>${closed?"":`<ul class="snav">${ps.map(p=>`<li><button type="button" class="sitem proj" data-tab="p/${esc(p.id)}" ${curTab==="p/"+p.id?'aria-current="page"':""}><span class="ico ${esc(p.state)}"></span><span class="sl">${esc(p.name)}</span></button></li>`).join("")}</ul>`}</div>`;
   }).join("");
+  if(curTab.startsWith("p/")){const p=projects.find(x=>x.id===curTab.slice(2));
+    if(projects.length||p)$("groups").innerHTML=p?projPage(p):`<p class="empty">This project isn't in the radar anymore.</p>`}
 }
 document.addEventListener("error",e=>{if(e.target.tagName==="IMG"&&e.target.closest(".av"))e.target.remove()},true);
 document.addEventListener("click",e=>{const c=e.target.closest(".chip.person");document.querySelectorAll(".chip.person.tip").forEach(x=>{if(x!==c)x.classList.remove("tip")});if(c)c.classList.toggle("tip")});
-$("groups").addEventListener("click",e=>{const b=e.target.closest("button.head");if(!b)return;const id=b.dataset.id;openRows.has(id)?openRows.delete(id):openRows.add(id);renderProjects()});
 
 const openTasks=pSet("tasks");let dragging=false;
 const ST=[["todo","To do"],["progress","In progress"],["done","Done"],["canceled","Canceled"]];
@@ -604,7 +662,7 @@ function taskRow(t,mode){const inP=mode==="proj";
 }
 let suppressClick=false,suppressUntil=0;
 function toggleTask(e){const b=e.target.closest("button.thead");if(!b)return;if(suppressClick||Date.now()<suppressUntil){suppressClick=false;return}const id=b.dataset.id;if(!openTasks.has(id)){const t=tasks.find(x=>x.id===id);if(t&&t.unread&&db){t.unread=false;db.collection("tasks").doc(id).update({unread:false}).catch(()=>{})}}openTasks.has(id)?openTasks.delete(id):openTasks.add(id);renderTasks()}
-$("open").addEventListener("click",toggleTask);$("nowList").addEventListener("click",toggleTask);$("groups").addEventListener("click",toggleTask);$("toTasks").addEventListener("click",()=>{setTab("tasks");history.replaceState(null,"","#tasks");scrollTo(0,0)});$("doneList").addEventListener("click",toggleTask);$("archList").addEventListener("click",toggleTask);
+$("open").addEventListener("click",toggleTask);$("nowList").addEventListener("click",toggleTask);$("groups").addEventListener("click",toggleTask);$("toTasks").addEventListener("click",()=>go("tasks"));$("doneList").addEventListener("click",toggleTask);$("archList").addEventListener("click",toggleTask);
 
 // Drag and drop: перетаскивание за ручку слева, работает мышью и пальцем; клавиатурой — стрелки вверх/вниз на ручке
 async function saveOrder(li){
