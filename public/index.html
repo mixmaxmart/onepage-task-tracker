@@ -503,6 +503,12 @@ html,body{overscroll-behavior:none}
 
 /* мягкий бордер сайдбара */
 @media (min-width:721px){ .side{border-right-color:color-mix(in srgb,var(--line) 55%,transparent)} }
+
+/* сайдбар: 2px между пунктами, заголовок группы как пункты, только серее; шеврон меньше и по ховеру */
+.snav{gap:2px}
+.shead{font-size:inherit;color:var(--faint)}
+.shead::after{width:4px;height:4px;border-width:0 1.25px 1.25px 0;opacity:0;transition:opacity .12s}
+.shead:hover::after,.shead:focus-visible::after{opacity:1}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -661,11 +667,12 @@ function projPage(p){
   </div>`;
 }
 function renderProjects(){
+  const pc={};for(const t of tasks)if(t.projectId&&isOpenSt(t))pc[t.projectId]=(pc[t.projectId]||0)+1;
   $("sideProj").innerHTML=GROUPS.map(([k,l])=>{
     const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
     if(!ps.length)return"";
     const closed=k==="done"?!sideShut.has("open:done"):sideShut.has(k);
-    return `<div class="sgroup"><button type="button" class="shead" data-g="${k}" aria-expanded="${!closed}">${esc(l)}<span class="sn">${ps.length}</span></button>${closed?"":`<ul class="snav">${ps.map(p=>`<li><button type="button" class="sitem proj" data-tab="p/${esc(p.id)}" ${curTab==="p/"+p.id?'aria-current="page"':""}><span class="ico ${esc(p.state)}"></span><span class="sl">${esc(p.name)}</span></button></li>`).join("")}</ul>`}</div>`;
+    return `<div class="sgroup"><button type="button" class="shead" data-g="${k}" aria-expanded="${!closed}">${esc(l)}</button>${closed?"":`<ul class="snav">${ps.map(p=>`<li><button type="button" class="sitem proj" data-tab="p/${esc(p.id)}" ${curTab==="p/"+p.id?'aria-current="page"':""}><span class="ico ${esc(p.state)}"></span><span class="sl">${esc(p.name)}</span>${pc[p.id]?`<span class="sn">${pc[p.id]}</span>`:""}</button></li>`).join("")}</ul>`}</div>`;
   }).join("");
   if(curTab.startsWith("p/")){const p=projects.find(x=>x.id===curTab.slice(2));
     if(projects.length||p)$("groups").innerHTML=p?projPage(p):`<p class="empty">This project isn't in the radar anymore.</p>`}
