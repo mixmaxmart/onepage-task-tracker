@@ -496,6 +496,10 @@ details.bsec{margin-top:18px}details.bsec>.bframe{margin-top:8px}
 
 /* сайдбар в цвет основы, только бордер справа */
 @media (min-width:721px){ .side{background:var(--bg)} .side .sitem:hover{background:var(--hover)} }
+
+/* сайдбар не скачет: без резинового оверскролла страницы */
+html,body{overscroll-behavior:none}
+.side{overscroll-behavior:contain}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
