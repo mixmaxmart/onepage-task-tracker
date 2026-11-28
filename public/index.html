@@ -522,6 +522,16 @@ html,body{overscroll-behavior:none}
 }
 @media (max-width:520px){details.sec>summary{display:block;text-wrap:pretty}details.sec>summary .chev{vertical-align:-1px;margin-right:6px}}
 .mcard .mt .md{display:inline-block;width:32px}
+
+/* проект: прогресс-кружок в сайдбаре, заголовок без кружка, секции обычным шрифтом, тире вместо точек */
+.sitem.proj .ico{--c:var(--faint);width:12px;height:12px;margin:0 2px;box-sizing:border-box}
+.sitem.proj .ico:not(.blocked):not(.done){border-style:solid;border-color:var(--c);background:conic-gradient(var(--c) 0 var(--p,0%),transparent 0);box-shadow:inset 0 0 0 1.5px var(--bg)}
+.side .sitem.proj .ico.waiting{--c:var(--wait)} .side .sitem.proj .ico.active{--c:var(--act)}
+.ppage section h4{font-size:inherit;color:var(--muted)}
+.ppage section ul:not(.rows){list-style:none;padding-left:0}
+.ppage section ul:not(.rows)>li{position:relative;padding-left:18px}
+.ppage section ul:not(.rows)>li::before{content:"–";position:absolute;left:2px;color:var(--faint)}
+.pmeta{margin-left:0}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -658,8 +668,9 @@ function svcOf(u){let h="";try{h=new URL(u).hostname}catch{}
 const ico=(u,k)=>`<span class="lico" aria-hidden="true">${ICONS[k||svcOf(u)]}</span>`;
 const linkChip=l=>`<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener">${ico(l.url)}${esc(l.label)}</a>`;
 const ul=a=>a&&a.length?`<ul>${a.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:"";
-function refsHtml(p){const r=p.refs||{};const ks=[["slack","Slack"],["linear","Linear"],["space","Space"]].filter(([k])=>r[k]&&r[k].url);
-  return ks.length?`<div class="chips">${ks.map(([k,n])=>`<a class="chip ref" href="${esc(r[k].url)}" target="_blank" rel="noopener">${ico(r[k].url,k)}<b>${n}</b>${r[k].label?` ${esc(r[k].label)}`:""}</a>`).join("")}</div>`:""}
+const isPrev=l=>/превью|preview|stag|демо|demo|тест|\btest|onlypage\.dev/i.test(`${l.label||""} ${l.url||""}`);
+function refsHtml(p,top=[]){const r=p.refs||{};const ks=[["slack","Slack"],["linear","Linear"],["space","Space"]].filter(([k])=>r[k]&&r[k].url);
+  return ks.length||top.length?`<div class="chips">${top.map(linkChip).join("")}${ks.map(([k,n])=>`<a class="chip ref" href="${esc(r[k].url)}" target="_blank" rel="noopener">${ico(r[k].url,k)}<b>${n}</b>${r[k].label?` ${esc(r[k].label)}`:""}</a>`).join("")}</div>`:""}
 const initials=n=>String(n||"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
 function teamHtml(p){
   const ms=p.members&&p.members.length?p.members:null;
@@ -670,22 +681,24 @@ function projPage(p){
   const ts=tasks.filter(t=>t.projectId===p.id&&st(t)!=="removed"&&keepInList(t)).sort((a,b)=>(a.due||"9")<(b.due||"9")?-1:(a.due||"9")>(b.due||"9")?1:(a.order??500)-(b.order??500));
   const state=(GROUPS.find(([k])=>k===p.state)||[,""])[1];
   return `<div class="ppage">
-    <header class="phead"><h1><span class="ico ${esc(p.state)}"></span>${esc(p.name)}</h1><p class="pmeta">${esc(state)}${p.updated?` · updated ${esc(fd(p.updated))}`:""}</p></header>
-    ${refsHtml(p)}
+    <header class="phead"><h1>${esc(p.name)}</h1><p class="pmeta">${esc(state)}${p.updated?` · updated ${esc(fd(p.updated))}`:""}</p></header>
+    ${refsHtml(p,(p.links||[]).filter(isPrev))}
     ${ts.length?`<section><h4>Tasks · ${ts.length}</h4><ul class="rows ptasks">${ts.map(t=>taskRow(t,"proj")).join("")}</ul></section>`:""}
     ${p.design&&p.design.length?`<section><h4>From design</h4>${ul(p.design)}</section>`:""}
     ${p.now&&p.now.length?`<section><h4>What's happening</h4>${ul(p.now)}</section>`:""}
     ${teamHtml(p).replace(/^<div>/,"<section>").replace(/<\/div>$/,"</section>")}
-    ${(p.links||[]).length?`<section><h4>Links</h4><div class="chips">${p.links.map(linkChip).join("")}</div></section>`:""}
+    ${(p.links||[]).filter(l=>!isPrev(l)).length?`<section><h4>Links</h4><div class="chips">${p.links.filter(l=>!isPrev(l)).map(linkChip).join("")}</div></section>`:""}
   </div>`;
 }
 function renderProjects(){
   const pc={};for(const t of tasks)if(t.projectId&&isOpenSt(t))pc[t.projectId]=(pc[t.projectId]||0)+1;
+  const pd={};for(const t of tasks){const x=st(t);if(!t.projectId||x==="removed"||x==="canceled")continue;const v=pd[t.projectId]||(pd[t.projectId]=[0,0]);v[1]++;if(x==="done")v[0]++}
+  const prog=id=>{const v=pd[id];return v&&v[1]?Math.round(v[0]/v[1]*100):0};
   $("sideProj").innerHTML=GROUPS.map(([k,l])=>{
     const ps=projects.filter(p=>p.state===k).sort((a,b)=>(a.order??99)-(b.order??99));
     if(!ps.length)return"";
     const closed=k==="done"?!sideShut.has("open:done"):sideShut.has(k);
-    return `<div class="sgroup"><button type="button" class="shead" data-g="${k}" aria-expanded="${!closed}">${esc(l)}</button>${closed?"":`<ul class="snav">${ps.map(p=>`<li><button type="button" class="sitem proj" data-tab="p/${esc(p.id)}" ${curTab==="p/"+p.id?'aria-current="page"':""}><span class="ico ${esc(p.state)}"></span><span class="sl">${esc(p.name)}</span>${pc[p.id]?`<span class="sn">${pc[p.id]}</span>`:""}</button></li>`).join("")}</ul>`}</div>`;
+    return `<div class="sgroup"><button type="button" class="shead" data-g="${k}" aria-expanded="${!closed}">${esc(l)}</button>${closed?"":`<ul class="snav">${ps.map(p=>`<li><button type="button" class="sitem proj" data-tab="p/${esc(p.id)}" ${curTab==="p/"+p.id?'aria-current="page"':""}><span class="ico ${esc(p.state)}" style="--p:${prog(p.id)}%"></span><span class="sl">${esc(p.name)}</span>${pc[p.id]?`<span class="sn">${pc[p.id]}</span>`:""}</button></li>`).join("")}</ul>`}</div>`;
   }).join("");
   if(curTab.startsWith("p/")){const p=projects.find(x=>x.id===curTab.slice(2));
     if(projects.length||p)$("groups").innerHTML=p?projPage(p):`<p class="empty">This project isn't in the radar anymore.</p>`}
