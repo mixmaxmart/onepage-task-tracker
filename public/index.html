@@ -509,6 +509,19 @@ html,body{overscroll-behavior:none}
 .shead{font-size:inherit;color:var(--faint)}
 .shead::after{width:4px;height:4px;border-width:0 1.25px 1.25px 0;opacity:0;transition:opacity .12s}
 .shead:hover::after,.shead:focus-visible::after{opacity:1}
+
+/* v-hotfix: телефон — 18px поля страницы, блоки с выносом 10px стоят в 8px от края с обеих сторон */
+@media (max-width:520px){body{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}}
+.tframe,.fblock,#doneSec>.rows,#archSec>.rows{max-width:calc(100% + 20px)}
+
+/* телефон: верхняя полоса — кнопка меню и название раздела */
+@media (max-width:720px){
+  .top{height:44px}
+  .ptitle{display:block;font-size:15px;font-weight:600}
+  .sidebtn .nico{width:18px;height:18px}
+}
+@media (max-width:520px){details.sec>summary{display:block;text-wrap:pretty}details.sec>summary .chev{vertical-align:-1px;margin-right:6px}}
+.mcard .mt .md{display:inline-block;width:32px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="chev" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
@@ -819,7 +832,7 @@ function renderTasks(){if(dragging){pendingRender=true;return}pendingRender=fals
     return `<div class="mcards">${ms.map(m=>{const a=new Date(m.start),b=new Date(m.end||m.start),live=a<=nowT&&b>nowT,past=b<=nowT;
       const day=k==="week"?a.toLocaleDateString("en-US",{weekday:"short"})+" ":"";const gUrl=past?granolaFor(m):"",lnk=gUrl||m.url,tag=lnk?"a":"div",href=lnk?` href="${esc(lnk)}" target="_blank" rel="noopener"`:"";
       const pr=live?Math.min(100,Math.max(0,(nowT-a)/Math.max(1,b-a)*100)):0;
-      return `<${tag} class="mcard${live?" now":""}${past?" past":""}${gUrl?" notes":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}${gUrl?`<span class="mg"><img src="/icons/granola.png" alt="">Granola</span>`:""}</${tag}>`}).join("")}</div>`};
+      return `<${tag} class="mcard${live?" now":""}${past?" past":""}${gUrl?" notes":""}"${href}>${live?`<span class="mprog" aria-hidden="true" style="width:${pr.toFixed(1)}%"></span>`:""}<span class="mt">${day?`<span class="md">${day.trim()}</span>`:""}${hm(a)+"–"+hm(b)}</span><span class="mn">${esc(m.title)}</span>${m.rsvp==="needsAction"&&!past?`<span class="mq">no reply</span>`:""}${live?`<span class="mlive">Now</span>`:""}${gUrl?`<span class="mg"><img src="/icons/granola.png" alt="">Granola</span>`:""}</${tag}>`}).join("")}</div>`};
   $("open").innerHTML=groups.map(([k,ts])=>{const mi=meetInfo(k);return `<details class="sec${!ts.length&&!mi.n?" esec":""}" data-k="${k||"none"}" ${(prev[k||"none"]??secUI("t:"+(k||"none")))===false?"":"open"}><summary>${label(k)}${cnt(k,ts)}${(()=>{const m=ts.filter(isOpenSt).reduce((n,t)=>n+(t.estimate||0),0)+mi.m;return m?`<span class="esum"> · ~${fmtEst(m)}</span>`:""})()}</summary><div class="tframe"><ul class="rows tlist" data-due="${k}">${typedRows(ts,mi)}<li class="ph">${k==="inbox"?"Nothing new. New tasks from calls land here":k==="week"?"Drop here to plan for this week":k==="late"?"Nothing overdue":k?"Drop here to schedule for this day":"No date"}</li></ul></div></details>`}).join("");
   $("doneList").innerHTML=done.map(taskRow).join("");
   if(projects.length)renderProjects();
